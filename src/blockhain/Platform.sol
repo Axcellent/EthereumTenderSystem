@@ -1,11 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.20;
 
+contract ReentrancyGuard
+{
+    bool private _canEnter = true;
+
+    modifier nonReentrant()
+    {
+        require(_canEnter, "ReentrancyGuard: Denied");
+        _canEnter = false;
+        _;
+        _canEnter = true;
+    }
+}
+
 /**
  * @title GovernmentTenderSystem
- * @dev Децентрализованная платформа для государственных закупок с автоматическим выбором поставщика
+ * @dev Децентрализованная платформа для государственных закупок с автоматическим выбором поставщика.
+ * Заказы могут создаваться государством (указанным при деплое) или частными компаниями.
+ * Репутация участников изменяется по итогам выполнения контрактов.
  */
-contract GovernmentTenderSystem
+contract GovernmentTenderSystem is ReentrancyGuard
 {
     // Статус тендера
     enum TenderStatus
@@ -42,8 +57,7 @@ contract GovernmentTenderSystem
     {
         uint256 tenderId;
 
-        address bidder;             // Адрес компании-исполнителя
-        uint256 reputation;         // Репутация для авторанжирования
+        address bidder;             // Адрес компании-исполнителя        
 
         uint256 price;              // Предложенная цена
         uint256 deadline;           // Предлагаемый срок    
@@ -56,9 +70,10 @@ contract GovernmentTenderSystem
     {
         Pending,
         Executing,
+        Finished,
         Completed,
-        Failed,
-        Judging
+        Judging,
+        Failed
     }
 
     // Контракт, заключенный на выполнение работ
@@ -91,7 +106,9 @@ contract GovernmentTenderSystem
     {
         uint256 contractId;
 
-        string description;       // Краткое описание (удалю потом)        
+        address reporter;           // Либо заказчик, либо исполнитель
+
+        string description;         // Краткое описание (удалю потом)        
 
         DocStatus status; 
     }
@@ -127,7 +144,7 @@ contract GovernmentTenderSystem
     address public government;
 
     // Репутация участников
-    mapping(address => uint256) public reputation;
+    mapping(address => int256) public reputation;
 
     uint256 public tenderCounter;
     mapping(uint256 => Tender) public tenders;
@@ -147,16 +164,7 @@ contract GovernmentTenderSystem
     mapping(uint256 => uint256[]) public tenderBids;      // все отклики на тендер
     mapping(uint256 => uint256) public tenderContract;    // ID контракта по тендеру (0 если нет)
 
-    mapping(uint256 => uint256[]) public contractReports; // все отчёты по контракту
-    mapping(uint256 => uint256[]) public contractReviews; // все отзывы по контракту
-
-    
-
-    modifier onlyGovernment()
-    {
-        require(msg.sender == government, "Only government can do this");
-        _;
-    }
+    mapping(uint256 => uint256[]) public contractReports; // все отчёты по контракту        
 
     modifier onlyTenderCreator(uint256 _tenderId)
     {
@@ -170,12 +178,11 @@ contract GovernmentTenderSystem
         _;
     }
 
-    modifier contractExists(uint256 _contractId)
+    modifier onlyGovernment()
     {
-        require(_contractId > 0 && _contractId <= contractCounter, "Contract does not exist");
+        require(msg.sender == government, "Only government can do this");
         _;
     }
-
 
     event TenderCreated
     (
@@ -220,6 +227,8 @@ contract GovernmentTenderSystem
     (
         uint256 indexed contractId,
         uint256 indexed tenderId,
+        // чтобы искать субподряды
+        uint256 indexed parentTenderId,
 
         address winner,
         uint256 amount
@@ -232,7 +241,9 @@ contract GovernmentTenderSystem
         // чтобы искать все отчеты по контракту
         uint256 indexed contractId,
 
-        uint256 proofCid
+        string description
+
+        //uint256 proofCid
     );
 
     event ReportAccepted
@@ -251,12 +262,30 @@ contract GovernmentTenderSystem
         uint256 indexed contractId
     );
 
+    event ContractFinished
+    (
+        uint256 indexed contractId
+    );
+
     event PaymentReleased
     (
         uint256 indexed contractId,
+        // история успешных контрактов для суда 
+        address indexed owner,
+        address indexed contractor,
 
-        address winner,
-        uint256 amount
+        uint256 amount,
+        uint256 timestamp
+    );
+
+    event ContractFailed
+    (
+        uint256 indexed contractId,
+        // история судебных дел для суда 
+        address indexed owner,
+        address indexed contractor,
+
+        uint256 timestamp
     );
 
     event ReviewSubmitted
@@ -310,7 +339,7 @@ contract GovernmentTenderSystem
         // check parent tender (если субподряд)
         if (_parentTenderId > 0)
         {
-            require(_parentTenderId < tenderCounter, "Tender does not exist");
+            require(_parentTenderId > 0 && _parentTenderId <= tenderCounter, "Tender does not exist");
             require(tenders[_parentTenderId].status == TenderStatus.Executing, "Tender is not executing");
         }
 
@@ -328,7 +357,7 @@ contract GovernmentTenderSystem
             }
         );
 
-        emit TenderCreated(tenderCounter, msg.sender, _parentTenderId, _description, _budget, _biddingDeadline);        
+        emit TenderCreated(tenderCounter, msg.sender, _parentTenderId, _description, _budget, _biddingDeadline);
     }
 
     /**
@@ -340,7 +369,7 @@ contract GovernmentTenderSystem
         uint256 _tenderId
     ) external tenderExists(_tenderId) onlyTenderCreator(_tenderId)
     {
-        require(tenders[_tenderId].status != TenderStatus.Executing, "This tender is already in work or denied");
+        require(tenders[_tenderId].status == TenderStatus.Opened, "This tender is already in work, finished or denied");
         tenders[_tenderId].status = TenderStatus.Denied;
     }
 
@@ -363,6 +392,7 @@ contract GovernmentTenderSystem
         // check tender
         require(tender.status == TenderStatus.Opened, "Tender is not open for bidding");
         require(block.timestamp <= tender.biddingDeadline, "Bidding period has ended");
+        require(tender.creator != msg.sender, "You are creator of this tender");
 
         // check bid
         require(_price > 0 && _price <= tender.budget, "Price must be positive and less than tender budget");
@@ -382,8 +412,7 @@ contract GovernmentTenderSystem
         bidCounter++;        
         bids[bidCounter] = Bid({
             tenderId: _tenderId,
-            bidder: msg.sender,
-            reputation: reputation[msg.sender],
+            bidder: msg.sender,            
             price: _price,
             deadline: _estimatedTime,            
             isActive: true
@@ -431,7 +460,8 @@ contract GovernmentTenderSystem
         require(tender.status == TenderStatus.Closed, "Tender has to be in closed-bidding status");                
 
         uint256 bestBidId = 0;
-        uint256 bestScore = 0;
+        int256 bestScore = 0;
+        // TODO: добавить оптимизацию в виде priority_queue
         for (uint i = 0; i < tenderBids[_tenderId].length; i++)
         {
             uint256 bidId = tenderBids[_tenderId][i];
@@ -440,9 +470,9 @@ contract GovernmentTenderSystem
             if (!bid.isActive)
                 continue;
 
-            uint256 rep = reputation[bid.bidder];
-            // TODO: correct formula            
-            uint256 score = (rep * 1e18) / bid.price;
+            int256 rep = reputation[bid.bidder];
+            // TODO: correct formula
+            int256 score = (rep * 1e18) / int256(bid.price);
             if (score > bestScore)
             {
                 bestScore = score;
@@ -469,7 +499,7 @@ contract GovernmentTenderSystem
         tenderContract[_tenderId] = contractCounter;
 
         emit WinnerSelected(_tenderId, bestBidId, winner, price);
-        emit ContractCreated(contractCounter, _tenderId, winner, price);
+        emit ContractCreated(contractCounter, _tenderId, tender.parentTenderId, winner, price);
     }
 
     /**
@@ -489,25 +519,301 @@ contract GovernmentTenderSystem
         tenders[contractData.tenderId].status = TenderStatus.Executing;
     }
 
-   
+    /**
+     * @dev Отправка отчета о работе
+     * @param _tenderId     - tenderId  - номер заказа
+     * @param _description  - string    - текст отчета (временно, потом через ipfs)
+    */
+    function submitReport
+    (
+        uint256 _tenderId,
+        string memory _description,
+        bool response
+    ) external tenderExists(_tenderId)
+    {
+        Tender memory t = tenders[_tenderId];
+        require(t.status == TenderStatus.Executing, "Tender is not executing");
+        uint256 _contractId = tenderContract[_tenderId];
 
-    function getTenderBids(uint256 _tenderId) external view returns (uint256[] memory)
+        Contract storage c = contracts[_contractId];
+        require(response || msg.sender == c.contractor, "You are not the perfomer of contract to create report");
+        require(!response || msg.sender == c.owner, "You are not the owner of contract to create response");
+
+        reportCounter++;
+        reports[reportCounter] = Report({
+            contractId: _contractId,
+            reporter: msg.sender,
+            description: _description,
+            status: DocStatus.Pending
+        });
+        contractReports[_contractId].push(reportCounter);
+
+        c.reportId = reportCounter;
+        emit ReportSubmitted(reportCounter, _contractId, _description);
+    }
+
+    /**
+     * @dev Выполнение принятия отчета или отказа от него (разрешение/запрет на переход работы на новый этап)
+     * @param _reportId - reportId  - идентификатор рассматриваемого отчета
+     * @param accepted  - bool      - принимаем или отказываемся принимать
+    */
+    function reviewReport
+    (
+        uint256 _reportId,
+        bool accepted
+    ) external
+    {
+        require(_reportId > 0 && _reportId <= reportCounter, "Report does not exist");
+        Report storage r = reports[_reportId];
+
+        require(msg.sender != r.reporter, accepted ? "You can not accept your report" : "You can not reject your report");
+        require(r.status == DocStatus.Pending, "This report is not pending");
+        Contract memory c = contracts[r.contractId];
+
+        require(c.status == ContractStatus.Executing, "This contract has been already finished");
+        require(msg.sender == c.owner || msg.sender == c.contractor, "You are not participant of this contract");        
+
+        if (accepted)
+        {
+            r.status = DocStatus.Accepted;
+            emit ReportAccepted(_reportId, r.contractId);
+        }
+        else
+        {
+            r.status = DocStatus.Rejected;
+            emit ReportRejected(_reportId, r.contractId);
+        }
+    }
+
+    /**
+     * @dev Подрядчик завершает контракт
+     * @param _tenderId - tenderId  - идентификатор тендера, контракт на который мы закрываем
+    */
+    function finishContract
+    (
+        uint256 _tenderId
+    ) external tenderExists(_tenderId)
+    {
+        Tender memory t = tenders[_tenderId];
+        require(t.status == TenderStatus.Executing, "This tender is not executing");
+        uint256 _contractId = tenderContract[_tenderId];
+
+        Contract storage c = contracts[_contractId];        
+        require(c.status == ContractStatus.Executing, "This contract is not executing");
+        require(msg.sender == c.contractor, "You are not contractor of this contract");
+        require(c.reportId != 0, "Documentation history is empty");
+        // не проверяем состояние последнего отчета, чтобы дать оперативности в 
+        // бюрокартической работе, конфликты могут быть урегулированы судом
+
+        c.status = ContractStatus.Finished;
+
+        emit ContractFinished(_contractId);
+    }
+
+    /**
+     * @dev Заказчик принимает работу
+     * @param _tenderId - tenderId  - идентификатор тендера, контракт на который мы закрываем
+     * @param accept    - bool      - принять/отклонить
+     * @param strict    - bool      - хотим ли мы подать в суд (в случае недобросовестной работы)
+    */
+    function acceptFinishedContract
+    (
+        uint256 _tenderId,
+        bool accept,
+        bool strict
+    ) external tenderExists(_tenderId) onlyTenderCreator(_tenderId) nonReentrant
+    {
+        Tender storage t = tenders[_tenderId];
+        require(t.status == TenderStatus.Executing, "This tender is not executing");
+        uint256 _contractId = tenderContract[_tenderId];
+
+        Contract storage c = contracts[_contractId];   
+        require(c.status == ContractStatus.Finished, "This contract is not finished");
+
+        if (accept)
+        {
+            (bool sent, ) = payable(c.contractor).call{value: c.amount}("");
+
+            if (sent)
+            {
+                c.status = ContractStatus.Completed;
+                t.status = TenderStatus.Completed;
+
+                emit PaymentReleased(_contractId, c.owner, c.contractor, c.amount, block.timestamp);
+            }        
+            else 
+            {
+                revert("Payment error");
+            }
+        }
+        else
+        {
+            if (strict)
+            {
+                c.status = ContractStatus.Judging;
+                t.status = TenderStatus.Completed;
+                emit ContractFailed(_contractId, c.owner, c.contractor, block.timestamp);
+            }
+            else
+            {
+                c.status = ContractStatus.Executing;
+            }
+        }    
+    }
+
+    /**
+     * @dev Отправить отзыв на заказчика или исполнителя
+     * @param _tenderId     - tenderId  - тендер, на котором вместе работали
+     * @param _contractor   - bool      - мы исполнитель
+     * @param _rating       - -5..5     - оценка исполнителя или заказчика
+     * @param _comment      - string    - комментарий к работе
+    */
+    function submitReview
+    (
+        uint256 _tenderId,
+        bool _contractor,
+        int8 _rating,
+        string memory _comment
+    )
+    external tenderExists(_tenderId)
+    {
+        Tender memory t = tenders[_tenderId];
+        require(t.status == TenderStatus.Completed, "Tender is not completed");
+
+        uint256 _contractId = tenderContract[_tenderId];
+        Contract memory c = contracts[_contractId];
+        require(_contractor || msg.sender == c.owner, "You are not creator of this tender");
+        require(!_contractor || msg.sender == c.contractor, "You are not performer of this tender");
+
+        require(_rating >= -5 && _rating <= 5, "Inavalid rating delta");
+
+        for (uint256 i = 0; i < reviewCounter; i++)
+        {
+            require(reviews[i].from != msg.sender || _contractId != reviews[i].contractId || 
+                reviews[i].status == DocStatus.Rejected, "You have accepted on pendings reviews in this tender");
+        }
+
+        address _to = (_contractor ? c.owner : c.contractor);
+        reviewCounter++;
+        reviews[reviewCounter] = Review({
+            contractId: _contractId,
+            from: msg.sender,
+            to: _to,
+            rating: _rating,
+            comment: _comment,
+            status: DocStatus.Pending
+        });
+
+        emit ReviewSubmitted(reviewCounter, _contractId, msg.sender, _to, _rating);
+    }
+
+    /**
+     * @dev Вернуть средства заказчику
+     * @param _tenderId     - tenderId  - тендер, по которому возврат
+     * @param toCreator     - bool      - заказчик прав
+    */
+    function withdrawMoney 
+    (
+        uint256 _tenderId,
+        bool toCreator
+    ) external onlyGovernment tenderExists(_tenderId) nonReentrant
+    {
+        Tender memory t = tenders[_tenderId];
+        require(t.status == TenderStatus.Completed, "Tender is not finished");
+        
+        Contract memory c = contracts[tenderContract[_tenderId]];
+        require(c.status == ContractStatus.Judging, "Contract is not judging");
+
+        bool sent = false;
+        if (toCreator)
+        {
+            (sent, ) = payable(c.owner).call{value: c.amount}("");
+        }
+        else
+        {
+            (sent, ) = payable(c.contractor).call{value: c.amount}("");
+        }
+
+        if (sent)
+        {   
+            c.status = ContractStatus.Failed;
+        }
+        else
+        {
+            revert("Payment error");
+        }
+    }
+
+    /**
+     * @dev Принять отзыв достоверным
+     * @param _reviewId     - reviewId  - идентификатор отзыва
+     * @param accept        - bool      - принимаем или нет
+    */
+    function reviewReview
+    (
+        uint256 _reviewId,
+        bool accept
+    )
+    external onlyGovernment
+    {        
+        require(_reviewId > 0 && _reviewId <= reviewCounter, "Review does not exist");
+
+        Review storage r = reviews[_reviewId];
+        require(r.status == DocStatus.Pending, "Review is not pending");
+
+        if (accept)
+        {
+            r.status = DocStatus.Accepted;
+            reputation[r.to] = reputation[r.to] + r.rating;
+        }
+        else 
+        {
+            r.status = DocStatus.Rejected;
+        }
+    }
+
+
+    function getTenderBids
+    (
+        uint256 _tenderId
+    ) external view returns (uint256[] memory)
     {
         return tenderBids[_tenderId];
     }
 
-    function getContractReports(uint256 _contractId) external view returns (uint256[] memory)
+    function getContractReports
+    (
+        uint256 _contractId
+    ) external view returns (uint256[] memory)
     {
         return contractReports[_contractId];
     }
 
-    function getContractReviews(uint256 _contractId) external view returns (uint256[] memory)
-    {
-        return contractReviews[_contractId];
-    }
-
-    function getReputation(address _addr) external view returns (uint256)
+    function getReputation
+    (
+        address _addr
+    ) external view returns (int256)
     {
         return reputation[_addr];
+    }
+
+    address private keeper;
+
+    function setKeeper
+    (
+        address _keeper
+    ) external onlyGovernment
+    {
+        keeper = _keeper;
+    }
+
+    function closeTender
+    (
+        uint256 _tenderId
+    ) external tenderExists(_tenderId)
+    {
+        Tender storage t = tenders[_tenderId];
+        require(t.status == TenderStatus.Opened, "Tender is not opened");
+        t.status = TenderStatus.Closed;
     }
 }
