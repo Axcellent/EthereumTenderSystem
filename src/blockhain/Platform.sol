@@ -491,19 +491,23 @@ contract GovernmentTenderSystem
 
    
 
-    function getTenderBids(uint256 _tenderId) external view returns (uint256[] memory) {
+    function getTenderBids(uint256 _tenderId) external view returns (uint256[] memory)
+    {
         return tenderBids[_tenderId];
     }
 
-    function getContractReports(uint256 _contractId) external view returns (uint256[] memory) {
+    function getContractReports(uint256 _contractId) external view returns (uint256[] memory)
+    {
         return contractReports[_contractId];
     }
 
-    function getContractReviews(uint256 _contractId) external view returns (uint256[] memory) {
+    function getContractReviews(uint256 _contractId) external view returns (uint256[] memory)
+    {
         return contractReviews[_contractId];
     }
 
-    function getReputation(address _addr) external view returns (uint256) {
+    function getReputation(address _addr) external view returns (uint256)
+    {
         return reputation[_addr];
     }
 }
