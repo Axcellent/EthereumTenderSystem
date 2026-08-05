@@ -1,18 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.20;
 
-contract ReentrancyGuard
-{
-    bool private _canEnter = true;
-
-    modifier nonReentrant()
-    {
-        require(_canEnter, "ReentrancyGuard: Denied");
-        _canEnter = false;
-        _;
-        _canEnter = true;
-    }
-}
+import "contracts/GTPUsersManager.sol";
+import "contracts/GTPSecurity.sol";
 
 /**
  * @title GovernmentTenderSystem
@@ -20,7 +10,9 @@ contract ReentrancyGuard
  * Заказы могут создаваться государством (указанным при деплое) или частными компаниями.
  * Репутация участников изменяется по итогам выполнения контрактов.
  */
-contract GovernmentTenderSystem is ReentrancyGuard
+contract GovernmentTenderSystem is 
+    GTS_Users,
+    GTS_Security
 {
     // Статус тендера
     enum TenderStatus
@@ -141,8 +133,6 @@ contract GovernmentTenderSystem is ReentrancyGuard
 
 
 
-    address public government;
-
     // Репутация участников
     mapping(address => int256) public reputation;
 
@@ -166,6 +156,8 @@ contract GovernmentTenderSystem is ReentrancyGuard
 
     mapping(uint256 => uint256[]) public contractReports; // все отчёты по контракту        
 
+
+
     modifier onlyTenderCreator(uint256 _tenderId)
     {
         require(tenders[_tenderId].creator == msg.sender, "Only tender creator can do this");
@@ -178,11 +170,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
         _;
     }
 
-    modifier onlyGovernment()
-    {
-        require(msg.sender == government, "Only government can do this");
-        _;
-    }
+
 
     event TenderCreated
     (
@@ -303,8 +291,6 @@ contract GovernmentTenderSystem is ReentrancyGuard
 
     
 
-    // ---------- Конструктор ----------
-
     constructor(address _government)
     {
         government = _government;
@@ -329,7 +315,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
         uint256 _deadline, 
         uint256 _biddingDeadline,
         uint256 _parentTenderId
-    ) external
+    ) external registeredOnly
     {
         // check tender
         require(_deadline > block.timestamp, "Deadline must be in future");
@@ -367,7 +353,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
     function revertTender
     (
         uint256 _tenderId
-    ) external tenderExists(_tenderId) onlyTenderCreator(_tenderId)
+    ) external registeredOnly tenderExists(_tenderId) onlyTenderCreator(_tenderId)
     {
         require(tenders[_tenderId].status == TenderStatus.Opened, "This tender is already in work, finished or denied");
         tenders[_tenderId].status = TenderStatus.Denied;
@@ -385,7 +371,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
         uint256 _tenderId,
         uint256 _price,
         uint256 _estimatedTime
-    ) external tenderExists(_tenderId)
+    ) external registeredOnly tenderExists(_tenderId)
     {
         Tender storage tender = tenders[_tenderId];
 
@@ -430,7 +416,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
     function withdrawBid
     (
         uint256 _bidId
-    ) external
+    ) external registeredOnly
     {
         require(_bidId > 0 && _bidId <= bidCounter, "Bid does not exist");
 
@@ -454,7 +440,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
     function openContract
     (
         uint256 _tenderId
-    ) public tenderExists(_tenderId) onlyTenderCreator(_tenderId)
+    ) public registeredOnly tenderExists(_tenderId) onlyTenderCreator(_tenderId)
     {
         Tender storage tender = tenders[_tenderId];
         require(tender.status == TenderStatus.Closed, "Tender has to be in closed-bidding status");                
@@ -509,7 +495,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
     function financeContract
     (
         uint256 _tenderId
-    ) external payable tenderExists(_tenderId) onlyTenderCreator(_tenderId)
+    ) external payable registeredOnly tenderExists(_tenderId) onlyTenderCreator(_tenderId)
     {
         Contract storage contractData = contracts[tenderContract[_tenderId]];
         require(contractData.status == ContractStatus.Pending, "Contract is not in pending status");        
@@ -529,7 +515,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
         uint256 _tenderId,
         string memory _description,
         bool response
-    ) external tenderExists(_tenderId)
+    ) external registeredOnly tenderExists(_tenderId)
     {
         Tender memory t = tenders[_tenderId];
         require(t.status == TenderStatus.Executing, "Tender is not executing");
@@ -561,7 +547,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
     (
         uint256 _reportId,
         bool accepted
-    ) external
+    ) external registeredOnly
     {
         require(_reportId > 0 && _reportId <= reportCounter, "Report does not exist");
         Report storage r = reports[_reportId];
@@ -592,7 +578,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
     function finishContract
     (
         uint256 _tenderId
-    ) external tenderExists(_tenderId)
+    ) external registeredOnly tenderExists(_tenderId)
     {
         Tender memory t = tenders[_tenderId];
         require(t.status == TenderStatus.Executing, "This tender is not executing");
@@ -621,7 +607,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
         uint256 _tenderId,
         bool accept,
         bool strict
-    ) external tenderExists(_tenderId) onlyTenderCreator(_tenderId) nonReentrant
+    ) external registeredOnly tenderExists(_tenderId) onlyTenderCreator(_tenderId) nonReentrant
     {
         Tender storage t = tenders[_tenderId];
         require(t.status == TenderStatus.Executing, "This tender is not executing");
@@ -675,7 +661,7 @@ contract GovernmentTenderSystem is ReentrancyGuard
         int8 _rating,
         string memory _comment
     )
-    external tenderExists(_tenderId)
+    external registeredOnly tenderExists(_tenderId)
     {
         Tender memory t = tenders[_tenderId];
         require(t.status == TenderStatus.Completed, "Tender is not completed");
@@ -797,16 +783,10 @@ contract GovernmentTenderSystem is ReentrancyGuard
         return reputation[_addr];
     }
 
-    address private keeper;
-
-    function setKeeper
-    (
-        address _keeper
-    ) external onlyGovernment
-    {
-        keeper = _keeper;
-    }
-
+    /**
+     * @dev Функция для хранителя для закрытия оставления заявок по тендерам
+     * @param _tenderId     - tenderId  - идентификатор тендера, который пора закрыть
+    */
     function closeTender
     (
         uint256 _tenderId
@@ -814,6 +794,8 @@ contract GovernmentTenderSystem is ReentrancyGuard
     {
         Tender storage t = tenders[_tenderId];
         require(t.status == TenderStatus.Opened, "Tender is not opened");
+        require(block.timestamp >= t.deadline, "Time for bidding is not over");
+        
         t.status = TenderStatus.Closed;
     }
 }
