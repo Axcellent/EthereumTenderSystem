@@ -25,7 +25,7 @@ contract GTS_Users
     // Только зарегистрированные пользователи
     modifier registeredOnly()
     {
-        require(msg.sender != address(0), "You are not registered in the system");
+        require(users[msg.sender].id != address(0), "You are not registered in the system");
         _;
     }
 

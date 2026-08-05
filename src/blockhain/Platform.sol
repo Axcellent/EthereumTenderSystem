@@ -446,7 +446,7 @@ contract GovernmentTenderSystem is
         require(tender.status == TenderStatus.Closed, "Tender has to be in closed-bidding status");                
 
         uint256 bestBidId = 0;
-        int256 bestScore = 0;
+        int256 bestScore = -1005;
         // TODO: добавить оптимизацию в виде priority_queue
         for (uint i = 0; i < tenderBids[_tenderId].length; i++)
         {
@@ -458,7 +458,7 @@ contract GovernmentTenderSystem is
 
             int256 rep = reputation[bid.bidder];
             // TODO: correct formula
-            int256 score = (rep * 1e18) / int256(bid.price);
+            int256 score = ((rep + 1006) * 1e18) / int256(bid.price);
             if (score > bestScore)
             {
                 bestScore = score;
@@ -794,8 +794,8 @@ contract GovernmentTenderSystem is
     {
         Tender storage t = tenders[_tenderId];
         require(t.status == TenderStatus.Opened, "Tender is not opened");
-        require(block.timestamp >= t.deadline, "Time for bidding is not over");
-        
+        require(block.timestamp >= t.biddingDeadline, "Time for bidding is not over");
+
         t.status = TenderStatus.Closed;
     }
 }
