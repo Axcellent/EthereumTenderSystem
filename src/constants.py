@@ -1,0 +1,12 @@
+CREATE_TENDER = 'createTender'
+CLOSE_TENDER = 'closeTender'
+REVERT_TENDER = 'revertTender'
+GET_TENDER = 'tenders'
+GET_TENDER = 'tenders'
+GET_TENDERS = 'getTenders'
+GET_USERS_TENDERS = 'getUsersTenders'
+
+OPEN_CONTRACT = 'openContract'
+FINANCE_CONTRACT = 'financeContract'
+HAND_IN_JOB = 'finishContract'
+ACCEPT_JOB = 'acceptFinishedContract'

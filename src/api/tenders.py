@@ -1,85 +1,16 @@
 from api import TxReceipt, BlockchainService
 
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from models.common import addr
+from models.tenders_dto import TenderGetFullDTO, TenderGetShortDTO, CreateTenderDTO
 
-from models.common import uint,\
-                        text,\
-                        string,\
-                        unix_time,\
-                        addr
-
-from math import ceil
-from models.common import TenderStatus
-
-import datetime
-
-CREATE_TENDER = 'createTender'
-CLOSE_TENDER = 'closeTender'
-REVERT_TENDER = 'revertTender'
-GET_TENDER = 'tenders'
-GET_TENDER = 'tenders'
-GET_TENDERS = 'getTenders'
-GET_USERS_TENDERS = 'getUsersTenders'
-
-class CreateTenderDAO(BaseModel):
-    title: string
-    description: string
-    budget: uint
-    deadline: unix_time
-    bidding_deadline: unix_time
-    parent_id: int
-    
-    @field_validator("deadline", "bidding_deadline", mode="before")
-    def validate_deadline(cls, value: datetime.datetime):
-        if not isinstance(value, datetime.datetime):
-            raise ValidationError("Not datetime type")
-        try:
-            new_value: unix_time = int(ceil(value.timestamp()))
-            return new_value
-        except:
-            raise ValidationError("Cannot convert to UNIX timestamp")
-
-class TenderGetFullDTO(BaseModel):
-    creator: addr
-    title: string
-    description: string
-    budget: uint
-    deadline: datetime.datetime
-    bidding_deadline: datetime.datetime
-    status: TenderStatus
-    parent_id: int
-
-    
-    
-    @field_validator("deadline", "bidding_deadline", mode="before")
-    def validate_deadline(cls, value: unix_time):
-        try:
-            new_value: datetime.datetime = datetime.datetime.fromtimestamp(value)
-            return new_value
-        except:
-            raise ValidationError("Cannot convert from UNIX timestamp to Date-Time")
-
-class TenderGetShortDTO(BaseModel):
-    creator: addr
-    title: string
-    budget: uint
-    deadline: datetime.datetime
-    
-    @field_validator("deadline", mode="before")
-    def validate_deadline(cls, value: unix_time):
-        try:
-            new_value: datetime.datetime = datetime.datetime.fromtimestamp(value)
-            return new_value
-        except:
-            raise ValidationError("Cannot convert from UNIX timestamp to Date-Time")
-
+from constants import CREATE_TENDER, CLOSE_TENDER, REVERT_TENDER, GET_TENDER, GET_TENDERS, GET_USERS_TENDERS
 
 class TendersManager():
     def create_tender(
         service: BlockchainService,
         address_from: addr,
         key: str,
-        tender_data: CreateTenderDAO
+        tender_data: CreateTenderDTO
     ) -> TxReceipt:      
         return service.send_tx(
             address_from,

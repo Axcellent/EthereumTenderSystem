@@ -40,6 +40,7 @@ class BlockchainService:
         key: str,
         function_name: str,
         args: list,
+        value: int = 0,
         gas: int = 600000,
         gas_price_gwei: int = 1
     ) -> TxReceipt:
@@ -49,12 +50,21 @@ class BlockchainService:
         if not func:
             raise NameError(f"Function {function_name} does not exist")
 
-        tx: TxParams = func(*args).build_transaction({
-            'chainId': self.chain_id,
-            'gas': gas,
-            'gasPrice': self.web3.to_wei(gas_price_gwei, 'gwei'),
-            'nonce': self.web3.eth.get_transaction_count(address_from)
-        })
+        if value:
+            tx: TxParams = func(*args).build_transaction({
+                'chainId': self.chain_id,
+                'gas': gas,
+                'gasPrice': self.web3.to_wei(gas_price_gwei, 'gwei'),
+                'nonce': self.web3.eth.get_transaction_count(address_from),
+                'value': value
+            })
+        else:
+            tx: TxParams = func(*args).build_transaction({
+                'chainId': self.chain_id,
+                'gas': gas,
+                'gasPrice': self.web3.to_wei(gas_price_gwei, 'gwei'),
+                'nonce': self.web3.eth.get_transaction_count(address_from)
+            })
 
         signed_tx: SignedTransaction = self.web3.eth.account.sign_transaction(tx, key)    
 
