@@ -1,11 +1,13 @@
 from api import BlockchainService
 from models.users_dto import UserCreateDTO
 
+from models.common import pkey, addr, uint
+
 class UserManager:
     def register(
         service: BlockchainService,
-        address_from: str,
-        key: str,
+        address_from: addr,
+        key: pkey,
         user_data: UserCreateDTO
     ):
         return service.send_tx(
@@ -17,8 +19,8 @@ class UserManager:
 
     def get_user_short(
         service: BlockchainService,
-        address_from: str,
-        key: str,
+        address_from: addr,
+        key: pkey,
         user_data: UserCreateDTO
     ):
         return service.send_tx(
@@ -30,8 +32,8 @@ class UserManager:
 
     def get_user_full(
         service: BlockchainService,
-        address_from: str,
-        key: str,
+        address_from: addr,
+        key: pkey,
         user_data: UserCreateDTO
     ):
         return service.send_tx(
@@ -42,8 +44,8 @@ class UserManager:
         )
     def delete_user(
         service: BlockchainService,
-        address_from: str,
-        key: str,
+        address_from: addr,
+        key: pkey,
         user_data: UserCreateDTO
     ):
         return service.send_tx(
@@ -55,8 +57,8 @@ class UserManager:
 
     def ban_user(
         service: BlockchainService,
-        address_from: str,
-        key: str,
+        address_from: addr,
+        key: pkey,
         user_data: UserCreateDTO
     ):
         return service.send_tx(

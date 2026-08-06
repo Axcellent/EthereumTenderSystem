@@ -8,6 +8,8 @@ from hexbytes import HexBytes
 from typing import Any
 import json
 
+from models.common import addr, pkey, uint
+
 class BlockchainService:
     def __init__(
         self,
@@ -36,13 +38,13 @@ class BlockchainService:
 
     def send_tx(
         self,
-        address_from: str,
-        key: str,
+        address_from: addr,
+        key: pkey,
         function_name: str,
         args: list,
-        value: int = 0,
-        gas: int = 600000,
-        gas_price_gwei: int = 1
+        value: uint = 0,
+        gas: uint = 600000,
+        gas_price_gwei: uint = 1
     ) -> TxReceipt:
         address_from: ChecksumAddress = self.web3.to_checksum_address(address_from)
         func: ContractFunction = getattr(self.contract.functions, function_name)
@@ -94,7 +96,7 @@ class BlockchainService:
 
     def view(
         self,
-        function_name,
+        function_name: str,
         *args
     ) -> Any:        
         func: ContractFunction = getattr(self.contract.functions, function_name)

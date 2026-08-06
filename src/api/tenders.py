@@ -1,6 +1,6 @@
 from api import TxReceipt, BlockchainService
 
-from models.common import addr
+from models.common import addr, uint, pkey
 from models.tenders_dto import TenderGetFullDTO, TenderGetShortDTO, CreateTenderDTO
 
 from constants import CREATE_TENDER, CLOSE_TENDER, REVERT_TENDER, GET_TENDER, GET_TENDERS, GET_USERS_TENDERS
@@ -9,7 +9,7 @@ class TendersManager():
     def create_tender(
         service: BlockchainService,
         address_from: addr,
-        key: str,
+        key: pkey,
         tender_data: CreateTenderDTO
     ) -> TxReceipt:      
         return service.send_tx(
@@ -22,33 +22,33 @@ class TendersManager():
     def revert_tender(
         service: BlockchainService,
         address_from: addr,
-        key: str,
-        tender_id: int
+        key: pkey,
+        tender_id: uint
     ) -> TxReceipt:      
         return service.send_tx(
             address_from,
             key,
             function_name = REVERT_TENDER,
-            args = tender_id,            
+            args = [tender_id]
         )
 
     def close_tender(
         service: BlockchainService,
         address_from: addr,
-        key: str,
-        tender_id: int
+        key: pkey,
+        tender_id: uint
     ) -> bool:
         return service.send_tx(
             address_from,
             key,
             function_name = CLOSE_TENDER,
-            args = tender_id,            
+            args = [tender_id]
         )
     
 
     def get_tender_full(
         service: BlockchainService,
-        tender_id: int
+        tender_id: uint
     ) -> TenderGetFullDTO:
         data = service.view(GET_TENDER, tender_id)
 
@@ -65,8 +65,8 @@ class TendersManager():
 
     def get_tenders_short(
         service: BlockchainService,
-        page: int,
-        count: int
+        page: uint,
+        count: uint
     ) -> list[TenderGetShortDTO]:
         data = service.view(GET_TENDERS, page, count)
 
