@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field, field_validator
-from models.common import string, text
+from models.common import string, text, UserStatus
 from typing import List
 
-class UserCreateDTO(BaseModel):
-    title: string
-    description: text
+import re
+
+class UserBaseDTO(BaseModel):
     cities: text
     telephones: text
     emails: text
@@ -15,8 +15,7 @@ class UserCreateDTO(BaseModel):
             raise ValueError("Uncorrect input format (expected array)")
         if len(values) > 5:
             raise ValueError("Too many telephones")
-        
-        import re
+                
         for v in values:
             if not re.fullmatch(r"\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}", v) and \
                 not re.fullmatch(r"8[0-9]{10}", v):
@@ -29,8 +28,7 @@ class UserCreateDTO(BaseModel):
             raise ValueError("Uncorrect input format (expected array)")
         if len(values) > 5:
             raise ValueError("Too many emails")
-        
-        import re
+                
         for v in values:
             if not re.fullmatch(r"[a-zA-Z-]+@[a-zA-Z-]+\.ru", v):
                 raise ValueError(f"Uncorrect format on {v}, need your-email@some-domain.only-ru")
@@ -42,9 +40,21 @@ class UserCreateDTO(BaseModel):
             raise ValueError("Uncorrect input format (expected array)")
         if len(values) > 128:
             raise ValueError("Too many cities")
-        
-        import re
+                
         for v in values:
             if not re.fullmatch(r"[a-zA-Z-]+", v):
                 raise ValueError(f"Uncorrect format on {v}, need Rostov-On-Don like")
         return ', '.join(values)
+
+class UserCreateDTO(UserBaseDTO):
+    title: string
+    description: text
+
+class UserGetFullDTO(UserBaseDTO):
+    title: string
+    description: text
+    status: UserStatus
+
+class UserGetShortDTO(BaseModel):
+    title: string
+    status: UserStatus

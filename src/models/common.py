@@ -42,3 +42,14 @@ class ContractStatus(IntEnum):
     @property
     def display_name(self) -> str:
         return self.name
+
+class UserStatus(IntEnum):
+    Unknown = 0
+    Active = 1
+    Banned = 2
+    Deleted = 3
+    Government = 4
+
+    @property
+    def display_name(self) -> str:
+        return self.name

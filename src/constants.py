@@ -22,3 +22,9 @@ GET_REPORTS = 'getContractReports'
 
 CREATE_REVIEW = 'submitReview'
 EXAMINE_REVIEW = 'submitReview'
+
+USER_REGISTER = "register"
+GET_USER = "users"
+GET_REPUTATION = "getReputation"
+DELETE_USER = "deleteUser"
+BAN_USER = "banUser"
