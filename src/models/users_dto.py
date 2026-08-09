@@ -1,5 +1,9 @@
-from pydantic import BaseModel, Field, field_validator
-from models.common import string, text, UserStatus
+from pydantic import BaseModel, field_validator
+
+from models.common import (string,
+                           text,
+                           UserStatus)
+
 from typing import List
 
 import re

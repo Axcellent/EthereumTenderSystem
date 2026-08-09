@@ -1,11 +1,15 @@
 from api import TxReceipt, BlockchainService
 
-from models.common import addr, uint, pkey
+from models.common import (addr,
+                           pkey)
 from models.reviews_dto import ReviewGetDTO, ReviewCreateDTO
 
-from constants import CREATE_REVIEW, EXAMINE_REVIEW, GET_REVIEW
+from constants import (CREATE_REVIEW,
+                       EXAMINE_REVIEW,
+                       GET_REVIEW)
 
-class TendersManager():
+class ReviewsManager():
+    @staticmethod
     def submit_review(
         service: BlockchainService,
         address_from: addr,
@@ -19,20 +23,22 @@ class TendersManager():
             args = review_data.model_dump().values(),
         )
 
+    @staticmethod
     def examine_review(
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        review_id: int
+        review_id: int,
+        accept: bool
     ) -> TxReceipt:      
         return service.send_tx(
             address_from,
             key,
             function_name = EXAMINE_REVIEW,
-            args = review_id,            
+            args = [review_id, accept] 
         )
     
-
+    @staticmethod
     def get_review(
         service: BlockchainService,
         review_id: int

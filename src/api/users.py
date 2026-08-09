@@ -1,9 +1,16 @@
 from api import BlockchainService, TxReceipt
 from models.users_dto import UserCreateDTO, UserGetFullDTO, UserGetShortDTO
 
-from models.common import pkey, addr, uint
+from models.common import (pkey,
+                           addr,                           
+                           string)
 
-from constants import USER_REGISTER, GET_USER, GET_REPUTATION, DELETE_USER, BAN_USER
+from constants import (USER_REGISTER, 
+                        GET_USER, 
+                        GET_REPUTATION, 
+                        DELETE_USER, 
+                        BAN_USER, 
+                        UNBAN_USER)
 
 class UserManager:
     @staticmethod
@@ -55,7 +62,7 @@ class UserManager:
         )
 
     @staticmethod
-    def getReputation(
+    def get_reputation(
         service: BlockchainService,
         user_addr: addr
     ) -> int:
@@ -71,13 +78,14 @@ class UserManager:
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        user_addr: addr
+        user_addr: addr,
+        reason: string
     ) -> TxReceipt:
         return service.send_tx(
             address_from,
             key,
             function_name = DELETE_USER,
-            args = [user_addr]
+            args = [user_addr, reason]
         )
 
     @staticmethod
@@ -85,11 +93,27 @@ class UserManager:
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        user_addr: addr
+        user_addr: addr,
+        reason: string
     ) -> TxReceipt:
         return service.send_tx(
             address_from,
             key,
             function_name = BAN_USER,
-            args = [user_addr]
+            args = [user_addr, reason]
+        )
+
+    @staticmethod
+    def ban_user(
+        service: BlockchainService,
+        address_from: addr,
+        key: pkey,
+        user_addr: addr,
+        reason: string
+    ) -> TxReceipt:
+        return service.send_tx(
+            address_from,
+            key,
+            function_name = UNBAN_USER,
+            args = [user_addr, reason]
         )

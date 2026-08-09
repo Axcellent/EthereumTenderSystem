@@ -138,23 +138,23 @@ contract GovernmentTenderSystem is
 
     uint256 public tenderCounter;
     mapping(uint256 => Tender) public tenders;
+    mapping(address => uint256[]) public userTenders;     // тендеры пользователей
 
     uint256 public bidCounter;
     mapping(uint256 => Bid) public bids;
+    mapping(uint256 => uint256[]) public tenderBids;      // все отклики на тендер
+    mapping(address => uint256[]) public userBids;        // все отклики пользователя
 
     uint256 public contractCounter;
     mapping(uint256 => Contract) public contracts;
+    mapping(uint256 => uint256) public tenderContract;    // ID контракта по тендеру (0 если нет)
 
     uint256 public reportCounter;
     mapping(uint256 => Report) public reports;
+    mapping(uint256 => uint256[]) public contractReports; // все отчёты по контракту        
 
     uint256 public reviewCounter;
     mapping(uint256 => Review) public reviews;
-
-    mapping(uint256 => uint256[]) public tenderBids;      // все отклики на тендер
-    mapping(uint256 => uint256) public tenderContract;    // ID контракта по тендеру (0 если нет)
-
-    mapping(uint256 => uint256[]) public contractReports; // все отчёты по контракту        
 
 
 
@@ -291,9 +291,14 @@ contract GovernmentTenderSystem is
 
     
 
-    constructor(address _government)
+    constructor
+    (
+        address _government, 
+        address _userModerator
+    )
     {
         government = _government;
+        userModerator = _userModerator;
     }
 
 

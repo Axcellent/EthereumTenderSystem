@@ -1,11 +1,10 @@
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pydantic import BaseModel, field_validator, ValidationError
 
-from models.common import uint,\
-                        text,\
-                        string,\
-                        unix_time,\
-                        addr,\
-                        TenderStatus
+from models.common import (uint,
+                           string,
+                           unix_time,
+                           addr,
+                           TenderStatus)
 
 from math import ceil
 

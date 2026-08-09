@@ -1,16 +1,8 @@
-from pydantic import BaseModel, Field, field_validator, ValidationError
-from models.common import *
-import datetime
+from pydantic import BaseModel
 
-from pydantic import BaseModel, Field, field_validator, ValidationError
-
-from models.common import uint,\
-                        text,\
-                        string,\
-                        unix_time,\
-                        addr,\
-                        TenderStatus
-
+from models.common import (uint,
+                           text,
+                           DocStatus)
 
 class ReportGetDTO(BaseModel):
     contract_id: uint

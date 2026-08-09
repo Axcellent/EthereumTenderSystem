@@ -2,9 +2,11 @@ from web3 import Web3
 from web3.types import TxParams, TxReceipt
 from web3.exceptions import Web3RPCError
 from web3.contract.contract import ContractFunction, Contract
+
 from eth_typing import ChecksumAddress
 from eth_account.datastructures import SignedTransaction
 from hexbytes import HexBytes
+
 from typing import Any
 import json
 

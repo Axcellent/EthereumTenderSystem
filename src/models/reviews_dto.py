@@ -1,11 +1,9 @@
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pydantic import BaseModel, Field
 
-from models.common import uint,\
-                        text,\
-                        string,\
-                        unix_time,\
-                        addr,\
-                        DocStatus
+from models.common import (uint,
+                           text,
+                           addr,
+                           DocStatus)
 
 class ReviewGetDTO(BaseModel):
     contractId: uint

@@ -1,11 +1,18 @@
 from api import TxReceipt, BlockchainService
 
-from models.common import addr, uint, pkey
+from models.common import (addr,
+                           uint,
+                           pkey)
 from models.bids_dto import BidGetDTO, BidCreateDTO
 
-from constants import SUBMIT_BID, REVERT_BID, GET_TENDER_BIDS, GET_USER_BIDS
+from constants import (SUBMIT_BID,
+                       REVERT_BID,
+                       GET_TENDER_BIDS,
+                       GET_USER_BIDS,
+                       GET_BID)
 
 class BidManager:
+    @staticmethod
     def submit_bid(
         service: BlockchainService,
         address_from: addr,
@@ -19,6 +26,7 @@ class BidManager:
             args=bid.model_dump().values(),
         )
 
+    @staticmethod
     def revert_bid(
         service: BlockchainService,
         address_from: addr,
@@ -32,28 +40,53 @@ class BidManager:
             args=[bid_id]
         )
 
+    @staticmethod
+    def get_bid(
+        service: BlockchainService,
+        bid_id: uint
+    ) -> BidGetDTO:
+        data = service.view(
+            function_name=GET_BID,
+            args=[bid_id]
+        )
+
+        return BidGetDTO(
+            tender_id=data[0],
+            bidder=data[1],
+            price=data[2],
+            deadline=data[3],
+            is_active=data[4]
+        )
+    
+    @staticmethod
     def get_tender_bids(
         service: BlockchainService,
         tender_id: uint
     ) -> list[BidGetDTO]:
-        data = service.view(GET_TENDER_BIDS, tender_id)
-        return [BidGetDTO(
-            tender_id=d[0],
-            bidder=d[1],
-            price=d[2],
-            deadline=d[3],
-            is_active=d[4]
-        ) for d in data]
 
+        bids = service.view(GET_TENDER_BIDS, tender_id)
+
+        data = []
+        for bid_id in bids:
+            data.append(BidManager.get_bid(
+                service,
+                bid_id
+            ))
+
+        return data
+
+    @staticmethod
     def get_users_bids(
         service: BlockchainService,
         user: addr
     ) -> list[BidGetDTO]:
-        data = service.view(GET_USER_BIDS, user)
-        return [BidGetDTO(
-            tender_id=d[0],
-            bidder=d[1],
-            price=d[2],
-            deadline=d[3],
-            is_active=d[4]
-        ) for d in data]
+        bids = service.view(GET_USER_BIDS, user)
+
+        data = []
+        for bid_id in bids:
+            data.append(BidManager.get_bid(
+                service,
+                bid_id
+            ))
+
+        return data

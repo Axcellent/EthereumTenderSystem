@@ -1,11 +1,17 @@
 from api import TxReceipt, BlockchainService
 
-from models.common import addr, uint, pkey
+from models.common import (addr,
+                           uint,
+                           pkey)
 from models.reports_dto import ReportCreateDTO, ReportGetDTO
 
-from constants import CREATE_REPORT, REVIEW_REPORT, GET_REPORTS
+from constants import (CREATE_REPORT,
+                       REVIEW_REPORT,
+                       GET_REPORTS,
+                       GET_REPORT)
 
 class ReportsManager():
+    @staticmethod
     def create_report(
         service: BlockchainService,
         address_from: addr,
@@ -19,6 +25,7 @@ class ReportsManager():
             args = report_data.model_dump().values(),
         )
 
+    @staticmethod
     def review_report(
         service: BlockchainService,
         address_from: addr,
@@ -32,16 +39,32 @@ class ReportsManager():
             function_name = REVIEW_REPORT,
             args = [report_id, accept] 
         )
-    
 
+    @staticmethod
+    def get_report(
+        service: BlockchainService,
+        report_id: uint,
+    ) -> ReportGetDTO:
+        data = service.view(GET_REPORT, report_id)
+
+        return ReportGetDTO(
+            contract_id=data[0],
+            description=data[1],
+            status=data[2]
+        )
+    
+    @staticmethod
     def get_contract_reports(
         service: BlockchainService,
         contract_id: uint
     ) -> list[ReportGetDTO]:
-        data = service.view(GET_REPORTS, contract_id)
+        reports = service.view(GET_REPORTS, contract_id)
 
-        return [ReportGetDTO(
-            contract_id=contract_id,
-            description=d[1],
-            status=d[2]
-        ) for d in data]
+        data = []
+        for report_id in reports:
+            data.append(ReportsManager.get_report(
+                service,
+                report_id
+            ))
+
+        return data
