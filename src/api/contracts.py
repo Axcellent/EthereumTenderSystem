@@ -82,14 +82,14 @@ class ContractsManager():
 
         return ContractGetFullDTO(
             contract_id=contract_id,
-            tenderId=data[0],
+            tender_id=data[0],
             contractor=data[1],
             owner=data[2],
             amount=data[3],
             started=data[4],
             deadline=data[5],
-            last_report_id=data[6],
-            status=data[7]
+            last_report_id=data[7],
+            status=data[6]
         )
 
 

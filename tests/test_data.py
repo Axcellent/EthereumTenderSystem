@@ -32,15 +32,15 @@ BEST_BID = 4
 def existing_users():
     return [
         # GOV
-        Account.from_key("0x2f6b3993e4d1271501e70fec047edc37dc020ab2189d098a1caf0bcf61ca1087"),
+        Account.from_key("0xbe4dcea404c36f180fa674dfdcdc2d110b91d6c279be2ba5049f9acf49afdc56"),
         # COMPANY
-        Account.from_key("0xf329e22fee5c8737695393ed710f80f78d7a7abf3338efd6548c09a8669ab056"),
+        Account.from_key("0x95b55973fd26e1d3bd180090115f1e0b3713ee0de39dd9b662f3ff57910e58e5"),
         # COOL COMPANY
-        Account.from_key("0x93ac5e84f043607a9eb667ede85edd96bfcf778c10acc2f596cfbcaff641ff4f"),
+        Account.from_key("0x55755a7e51ddf27a69141cb4bc66c65f0699a396859ff159f7bdc5637e7cf7eb"),
         # BAD COMPANY
-        Account.from_key("0xe277392baec1182f6d8666cb43fe1c2a86e7ebdc1c9eee2173ed8eb66b433862"),
+        Account.from_key("0x06edbe7914611d36d959b3126af9b5651b4e57f133c5ac9c5feca4297152f87a"),
         # SOME GUY
-        Account.from_key("0x3a163bc13f1d335ad069b6501e50c6ade36599f5e492b2024bab6b30cb6d7731"),
+        Account.from_key("0xdab74da3a95d08be2ec482e41456576b2a746706d8662576b3b7102953c65f2f"),
     ]
 
 @pytest.fixture(scope="function")
@@ -93,7 +93,7 @@ def tenders_data() -> list[TenderCreateDTO]:
             description = "Fix all roads in Russia",
             budget = 1_000_000_000,
             deadline = datetime.datetime.now() + datetime.timedelta(days= 1000),
-            bidding_deadline =  datetime.datetime.now() + datetime.timedelta(seconds= 5),
+            bidding_deadline =  datetime.datetime.now() + datetime.timedelta(seconds= 4),
             parent_id = 0
         ),
         TenderCreateDTO(
@@ -101,7 +101,7 @@ def tenders_data() -> list[TenderCreateDTO]:
             description = "Fix all roads in Saint-Petersburg",
             budget = 100_000_000,
             deadline = datetime.datetime.now() + datetime.timedelta(days= 100),
-            bidding_deadline =  datetime.datetime.now() + datetime.timedelta(seconds= 5),
+            bidding_deadline =  datetime.datetime.now() + datetime.timedelta(seconds= 4),
             parent_id = 1
         )
     ]

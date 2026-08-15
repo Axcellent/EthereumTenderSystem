@@ -17,7 +17,7 @@ def provider_url():
 
 @pytest.fixture(scope="session")
 def contract_address():
-    return "0x675fF4a6C7D0a3C26BB38c697854a40953912EBe"
+    return "0x5A2b41B9e49F7e79fA07dD2F75534a682830AD81"
 
 @pytest.fixture(scope="session")
 def abi_file():

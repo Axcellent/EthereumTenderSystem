@@ -52,7 +52,8 @@ class TendersManager():
             address_from,
             key,
             function_name = CLOSE_TENDER,
-            args = [tender_id]
+            args = [tender_id],
+            unsafe = True
         )
     
     @staticmethod

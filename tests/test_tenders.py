@@ -99,3 +99,50 @@ def test_create_tender_validation(
 
     assert expected_error_substring in str(exc_info.value)
 
+def test_tender_close(
+    service,
+    registered_users,
+    created_tenders,
+    submitted_bids
+):    
+    gov: LocalAccount = registered_users(GOV)
+    comp: LocalAccount = registered_users(COMP)
+    tender: TenderGetFullDTO = created_tenders(TENDER, GOV)
+
+    with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
+        TendersManager.close_tender(
+            service,
+            gov.address,
+            gov.key,
+            1
+        )
+
+    import time
+    time.sleep(5)
+
+    with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
+        TendersManager.close_tender(
+            service,
+            comp.address,
+            comp.key,
+            1
+        )
+
+    TendersManager.close_tender(
+        service,
+        gov.address,
+        gov.key,
+        1
+    )
+
+    with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
+        TendersManager.close_tender(
+            service,
+            gov.address,
+            gov.key,
+            1
+        )
+
+    tender: TenderGetFullDTO = TendersManager.get_tender_full(service, 1)
+
+    assert tender.status == TenderStatus.Closed

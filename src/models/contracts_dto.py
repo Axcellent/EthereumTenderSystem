@@ -17,7 +17,7 @@ class ContractGetShortDTO(BaseModel):
 
 class ContractGetFullDTO(BaseModel):
     contract_id: uint
-    tenderId: uint
+    tender_id: uint
 
     contractor: addr
     owner: addr
@@ -26,7 +26,7 @@ class ContractGetFullDTO(BaseModel):
 
     started: datetime.datetime
     deadline: datetime.datetime
-    last_report_id: uint
+    last_report_id: int
 
     status: ContractStatus
 

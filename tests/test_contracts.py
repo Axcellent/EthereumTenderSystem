@@ -38,7 +38,7 @@ from test_data import (existing_users,
                         EXPENSIVE_BID
                         )
 
-from tests_common import registered_users, created_tenders, submitted_bids
+from tests_common import registered_users, created_tenders, submitted_bids, opened_contracts
 
 import time
 
@@ -66,25 +66,6 @@ def test_contract_creating(
             best_bid.tender_id
         )
 
-
-
-    with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
-        ContractsManager.open_contract(
-            service,
-            gov.address,
-            gov.key,
-            best_bid.tender_id
-        )
-
-    with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
-        ContractsManager.open_contract(
-            service,
-            gov.address,
-            gov.key,
-            best_bid.tender_id
-        )
-
-    raise RuntimeError("Here")
     import time
     time.sleep(5)
 
@@ -95,8 +76,6 @@ def test_contract_creating(
         best_bid.tender_id
     )
 
-    
-
     ContractsManager.open_contract(
         service,
         gov.address,
@@ -104,7 +83,7 @@ def test_contract_creating(
         best_bid.tender_id
     )
 
-    with pytest.raises(RuntimeError, match="COCI"):
+    with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
         ContractsManager.open_contract(
             service,
             gov.address,
@@ -117,20 +96,38 @@ def test_contract_creating(
     assert contract.deadline == best_bid.deadline
     assert contract.amount == best_bid.price
     assert contract.status == ContractStatus.Pending
+    assert contract.tender_id == best_bid.tender_id
 
-def test_submit_on_own_tender(
+def test_finance_contract(
     service,
     registered_users,
     created_tenders,
-    bids_data 
-):    
-    gov: LocalAccount = registered_users(GOV)
-    tender: TenderGetFullDTO = created_tenders(TENDER, GOV)    
+    opened_contracts
+):
+    gov: LocalAccount = registered_users(GOV)    
+    comp: LocalAccount = registered_users(COMP)
+    contract: ContractGetFullDTO = opened_contracts(BEST_BID, TENDER, GOV, COMP)
 
-    with pytest.raises(RuntimeError, match="You are creator of this tender"):
-        BidsManager.submit_bid(
+    with pytest.raises(RuntimeError, match="Only tender creator can do this"):
+        ContractsManager.finance_contract(
             service,
-            gov.address,
-            gov.key,
-            bids_data[EXPENSIVE_BID]
+            comp.address,
+            comp.key,
+            contract.tender_id,
+            contract.amount
         )
+
+    assert contract.status == ContractStatus.Pending    
+
+    ContractsManager.finance_contract(
+        service,
+        gov.address,
+        gov.key,
+        contract.tender_id,
+        contract.amount
+    )
+
+    contract = ContractsManager.get_contract_full(service, contract.contract_id)
+
+    assert contract.status == ContractStatus.Executing    
+        

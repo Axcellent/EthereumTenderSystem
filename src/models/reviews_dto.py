@@ -14,7 +14,7 @@ class ReviewGetDTO(BaseModel):
     status: DocStatus
 
 class ReviewCreateDTO(BaseModel):
-    tenderId: uint    
+    tender_id: uint    
     contractor: bool
     rating: int = Field(le=-5,ge=5)
     comment: text

@@ -84,20 +84,12 @@ def test_submit_on_own_tender(
     bids_data 
 ):    
     gov: LocalAccount = registered_users(GOV)
-    tender: TenderGetFullDTO = created_tenders(TENDER, GOV)
+    tender: TenderGetFullDTO = created_tenders(TENDER, GOV)    
 
-
-    with pytest.raises(RuntimeError, match="BIB"):
+    with pytest.raises(RuntimeError, match="You are creator of this tender"):
         BidsManager.submit_bid(
             service,
             gov.address,
             gov.key,
             bids_data[EXPENSIVE_BID]
         )
-
-def test_tender_close(
-    service,
-    registered_users,
-    created_tenders,
-):
-    pass    

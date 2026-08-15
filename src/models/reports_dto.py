@@ -10,6 +10,6 @@ class ReportGetDTO(BaseModel):
     status: DocStatus
 
 class ReportCreateDTO(BaseModel):
-    tenderId: uint
+    tender_id: uint
     description: text
     response: bool

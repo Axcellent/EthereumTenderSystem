@@ -112,3 +112,35 @@ def submitted_bids(
             )
         return BidsManager.get_bid(service, BlockchainService.view(service, "bidCounter"))
     return _create_bid
+
+@pytest.fixture
+def opened_contracts(
+    service: BlockchainService,
+    registered_users : list[LocalAccount],
+    created_tenders : list[TenderCreateDTO],
+    submitted_bids : list[BidCreateDTO]
+    ):
+    def _open_contract(
+            bid_id: int,
+            tender_id: int,
+            owner_id: int,
+            contractor_id: int,
+            ) -> LocalAccount:
+        import time
+        user = registered_users(owner_id)
+        contractor = registered_users(contractor_id)
+
+        tender = created_tenders(tender_id, owner_id)
+        bid = submitted_bids(bid_id, tender_id, contractor_id)
+    
+        time.sleep(5)
+
+        TendersManager.close_tender(service, user.address, user.key, tender_id + 1)
+        ContractsManager.open_contract(
+            service,
+            user.address,
+            user.key,
+            tender_id + 1
+        )
+        return ContractsManager.get_tender_contract(service, tender_id + 1)
+    return _open_contract

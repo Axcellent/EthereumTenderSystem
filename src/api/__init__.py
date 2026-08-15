@@ -9,6 +9,7 @@ from hexbytes import HexBytes
 
 from typing import Any
 import json
+import requests
 
 from models.common import addr, pkey, uint
 
@@ -19,6 +20,11 @@ class BlockchainService:
         contract_address: str,
         contract_abi_file: str
     ):
+        session = requests.Session()
+        session.timeout = (5, 60)
+        session.headers.update({'Connection': 'keep-alive'})
+
+        #self.web3 = Web3(Web3.HTTPProvider(provider_url, session=session))
         self.web3 = Web3(Web3.HTTPProvider(provider_url, request_kwargs={'timeout': 120}))
         if not self.web3 or not self.web3.is_connected():
             raise ConnectionError("Unable to connect to provider")
@@ -45,6 +51,7 @@ class BlockchainService:
         function_name: str,
         args: list,
         value: uint = 0,
+        unsafe: bool = False,
         gas: uint = 600000,
         gas_price_gwei: uint = 1
     ) -> TxReceipt:
@@ -65,15 +72,21 @@ class BlockchainService:
 
         signed_tx: SignedTransaction = self.web3.eth.account.sign_transaction(tx, key)    
 
-        try:            
-            func(*args).estimate_gas({
-                'from': address_from,
-                'value': value
-            })   
-        except Exception as e:
-            raise RuntimeError(e.message)
+        if not unsafe:
+            try:            
+                func(*args).estimate_gas({
+                    'from': address_from,
+                    'value': value
+                })   
+            except Exception as e:
+                raise RuntimeError(e.message)
 
-        tx_hash: HexBytes = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            tx_hash: HexBytes = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        else:
+            try:
+                tx_hash: HexBytes = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            except Exception as e:
+                raise RuntimeError(e.message)
 
 
         rx: TxReceipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
