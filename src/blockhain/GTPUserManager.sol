@@ -115,7 +115,7 @@ contract GTS_Users
         require(msg.sender == userModerator, "Permition denied");
 
         User storage user = users[_userId];
-        require(users[msg.sender].status == UserStatus.Active, "User is not active");
+        require(user.status == UserStatus.Active, "User is not active");
         user.status = UserStatus.Banned;
 
         emit UserBanned(_userId, _reason);
@@ -135,7 +135,7 @@ contract GTS_Users
         require(msg.sender == userModerator, "Permition denied");
 
         User storage user = users[_userId];
-        require(users[msg.sender].status == UserStatus.Banned, "User is not banned");
+        require(user.status == UserStatus.Banned, "User is not banned");
         user.status = UserStatus.Active;
 
         emit UserUnbanned(_userId, _reason);
@@ -156,7 +156,7 @@ contract GTS_Users
         require(msg.sender == userModerator, "Permition denied");
 
         User storage user = users[_userId];
-        require(users[msg.sender].status != UserStatus.Unknown, "User is not in system");
+        require(user.status != UserStatus.Unknown && user.status != UserStatus.Deleted, "User is not in system");
         user.status = UserStatus.Deleted;
 
         emit UserDeleted(_userId, _reason);

@@ -1,7 +1,8 @@
-from pydantic import BaseModel, field_validator, ValidationError
+from pydantic import BaseModel, field_validator
 
 from models.common import (uint,
                            string,
+                           text,
                            unix_time,
                            addr,
                            TenderStatus)
@@ -9,9 +10,9 @@ from models.common import (uint,
 from math import ceil
 
 import datetime
-class CreateTenderDTO(BaseModel):
+class TenderCreateDTO(BaseModel):
     title: string
-    description: string
+    description: text
     budget: uint
     deadline: unix_time
     bidding_deadline: unix_time
@@ -20,17 +21,17 @@ class CreateTenderDTO(BaseModel):
     @field_validator("deadline", "bidding_deadline", mode="before")
     def validate_deadline(cls, value: datetime.datetime):
         if not isinstance(value, datetime.datetime):
-            raise ValidationError("Not datetime type")
+            raise ValueError("Not datetime type")
         try:
             new_value: unix_time = int(ceil(value.timestamp()))
             return new_value
         except:
-            raise ValidationError("Cannot convert to UNIX timestamp")
+            raise ValueError("Cannot convert to UNIX timestamp")
 
 class TenderGetFullDTO(BaseModel):
     creator: addr
     title: string
-    description: string
+    description: text
     budget: uint
     deadline: datetime.datetime
     bidding_deadline: datetime.datetime
@@ -44,7 +45,7 @@ class TenderGetFullDTO(BaseModel):
             new_value: datetime.datetime = datetime.datetime.fromtimestamp(value)
             return new_value
         except:
-            raise ValidationError("Cannot convert from UNIX timestamp to Date-Time")
+            raise ValueError("Cannot convert from UNIX timestamp to Date-Time")
 
 class TenderGetShortDTO(BaseModel):
     creator: addr
@@ -58,5 +59,5 @@ class TenderGetShortDTO(BaseModel):
             new_value: datetime.datetime = datetime.datetime.fromtimestamp(value)
             return new_value
         except:
-            raise ValidationError("Cannot convert from UNIX timestamp to Date-Time")
+            raise ValueError("Cannot convert from UNIX timestamp to Date-Time")
 

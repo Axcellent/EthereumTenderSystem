@@ -19,7 +19,7 @@ class BlockchainService:
         contract_address: str,
         contract_abi_file: str
     ):
-        self.web3 = Web3(Web3.HTTPProvider(provider_url))
+        self.web3 = Web3(Web3.HTTPProvider(provider_url, request_kwargs={'timeout': 120}))
         if not self.web3 or not self.web3.is_connected():
             raise ConnectionError("Unable to connect to provider")
 
@@ -54,52 +54,36 @@ class BlockchainService:
         if not func:
             raise NameError(f"Function {function_name} does not exist")
 
-        if value:
-            tx: TxParams = func(*args).build_transaction({
-                'chainId': self.chain_id,
-                'gas': gas,
-                'gasPrice': self.web3.to_wei(gas_price_gwei, 'gwei'),
-                'nonce': self.web3.eth.get_transaction_count(address_from),
-                'value': value
-            })
-        else:
-            tx: TxParams = func(*args).build_transaction({
-                'chainId': self.chain_id,
-                'gas': gas,
-                'gasPrice': self.web3.to_wei(gas_price_gwei, 'gwei'),
-                'nonce': self.web3.eth.get_transaction_count(address_from)
-            })
+        tx: TxParams = func(*args).build_transaction({
+            'chainId': self.chain_id,
+            'gas': gas,
+            #'gasPrice': self.web3.to_wei(gas_price_gwei, 'gwei'),
+            'nonce': self.web3.eth.get_transaction_count(address_from),
+            'value': value,
+            'maxFeePerGas': 2000000000
+        })
 
         signed_tx: SignedTransaction = self.web3.eth.account.sign_transaction(tx, key)    
 
-        try:
-            tx_hash: HexBytes = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-            rx: TxReceipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
-
-            if rx["status"] == 0:
-                try:
-                    self.web3.eth.call({
-                        'from': address_from,
-                        'to': self.contract_address,
-                        'data': tx["data"]
-                    })
-                except Exception as e:
-                    raise RuntimeError(f"Transaction reverted: {str(e)}")
-        except Web3RPCError as we:
-            st = we.message.find("revert") + 7
-            end = we.message.find("', '")
-            raise RuntimeError(we.message[st:end])
+        try:            
+            func(*args).estimate_gas({
+                'from': address_from,
+                'value': value
+            })   
         except Exception as e:
-            raise RuntimeError(str(e))
+            raise RuntimeError(e.message)
 
+        tx_hash: HexBytes = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+
+        rx: TxReceipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
 
         return rx
 
     def view(
         self,
         function_name: str,
-        *args
+        args: list = []
     ) -> Any:        
         func: ContractFunction = getattr(self.contract.functions, function_name)
         return func(*args).call()

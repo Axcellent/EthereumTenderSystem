@@ -31,7 +31,7 @@ class BidCreateDTO(BaseModel):
         if not isinstance(value, datetime.datetime):
             raise ValidationError("Can receive only datetime.datetime")
         try:
-            v: unix_time = value.timestamp()
+            v: unix_time = int(value.timestamp())
             return v
         except:
             raise ValidationError("Cannot convert from Date-Time timestamp to UNIX")

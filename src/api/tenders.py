@@ -3,7 +3,7 @@ from api import TxReceipt, BlockchainService
 from models.common import (addr, 
                            uint, 
                            pkey)
-from models.tenders_dto import TenderGetFullDTO, TenderGetShortDTO, CreateTenderDTO
+from models.tenders_dto import TenderGetFullDTO, TenderGetShortDTO, TenderCreateDTO
 
 from constants import (CREATE_TENDER,
                        CLOSE_TENDER,
@@ -18,7 +18,7 @@ class TendersManager():
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        tender_data: CreateTenderDTO
+        tender_data: TenderCreateDTO
     ) -> TxReceipt:      
         return service.send_tx(
             address_from,
@@ -60,7 +60,7 @@ class TendersManager():
         service: BlockchainService,
         tender_id: uint
     ) -> TenderGetFullDTO:
-        data = service.view(GET_TENDER, tender_id)
+        data = service.view(GET_TENDER, [tender_id])
 
         return TenderGetFullDTO(
             creator=data[0],
@@ -98,7 +98,7 @@ class TendersManager():
         page: uint,
         count: uint
     ) -> list[TenderGetShortDTO]:
-        tenders = service.view(GET_TENDERS, page, count)
+        tenders = service.view(GET_TENDERS, [page, count])
 
         return TendersManager.get_short_tenders_by_ids(service, tenders)
 
@@ -107,6 +107,6 @@ class TendersManager():
         service: BlockchainService,
         user: addr
     ) -> list[TenderGetShortDTO]:
-        tenders = service.view(GET_USERS_TENDERS, user)
+        tenders = service.view(GET_USERS_TENDERS, [user])
 
         return TendersManager.get_short_tenders_by_ids(service, tenders)

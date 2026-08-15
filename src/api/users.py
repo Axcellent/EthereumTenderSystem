@@ -12,7 +12,7 @@ from constants import (USER_REGISTER,
                         BAN_USER, 
                         UNBAN_USER)
 
-class UserManager:
+class UsersManager:
     @staticmethod
     def register(
         service: BlockchainService,
@@ -20,11 +20,19 @@ class UserManager:
         key: pkey,
         user_data: UserCreateDTO
     ) -> TxReceipt:
+        data = [
+            user_data.title,
+            user_data.description,
+            user_data.cities,
+            user_data.telephones,
+            user_data.emails
+        ]
+        
         return service.send_tx(
             address_from,
             key,
             function_name = USER_REGISTER,
-            args = user_data.model_dump().values()
+            args = data
         )
 
     @staticmethod
@@ -104,7 +112,7 @@ class UserManager:
         )
 
     @staticmethod
-    def ban_user(
+    def unban_user(
         service: BlockchainService,
         address_from: addr,
         key: pkey,

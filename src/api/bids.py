@@ -11,7 +11,7 @@ from constants import (SUBMIT_BID,
                        GET_USER_BIDS,
                        GET_BID)
 
-class BidManager:
+class BidsManager:
     @staticmethod
     def submit_bid(
         service: BlockchainService,
@@ -68,7 +68,7 @@ class BidManager:
 
         data = []
         for bid_id in bids:
-            data.append(BidManager.get_bid(
+            data.append(BidsManager.get_bid(
                 service,
                 bid_id
             ))
@@ -84,7 +84,7 @@ class BidManager:
 
         data = []
         for bid_id in bids:
-            data.append(BidManager.get_bid(
+            data.append(BidsManager.get_bid(
                 service,
                 bid_id
             ))
