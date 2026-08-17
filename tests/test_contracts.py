@@ -24,6 +24,7 @@ from test_data import (existing_users,
                         users_data,
                         tenders_data,
                         bids_data,
+                        reports_data,
                         GOV,
                         COMP,
                         GOOD_COMP,
@@ -35,7 +36,8 @@ from test_data import (existing_users,
                         GOOD_BID,
                         LONG_BID,
                         NORMAL_BID,
-                        EXPENSIVE_BID
+                        EXPENSIVE_BID,
+                        REP_FINAL
                         )
 
 from tests_common import registered_users, created_tenders, submitted_bids, opened_contracts
@@ -101,7 +103,6 @@ def test_contract_creating(
 def test_finance_contract(
     service,
     registered_users,
-    created_tenders,
     opened_contracts
 ):
     gov: LocalAccount = registered_users(GOV)    
@@ -130,4 +131,51 @@ def test_finance_contract(
     contract = ContractsManager.get_contract_full(service, contract.contract_id)
 
     assert contract.status == ContractStatus.Executing    
-        
+
+def test_complete_job(
+    service,
+    registered_users,    
+    opened_contracts,
+    reports_data
+):
+    gov: LocalAccount = registered_users(GOV)    
+    comp: LocalAccount = registered_users(GOOD_COMP)
+    guy: LocalAccount = registered_users(GUY)
+    contract: ContractGetFullDTO = opened_contracts(BEST_BID, TENDER, GOV, GOOD_COMP)
+
+    ContractsManager.finance_contract(
+        service,
+        gov.address,
+        gov.key,
+        contract.tender_id,
+        contract.amount
+    )
+
+    ReportsManager.create_report(
+        service,
+        comp.address,
+        comp.key,
+        reports_data[REP_FINAL]
+    )
+
+    with pytest.raises(RuntimeError, match="You are not contractor of this contract"):
+        ContractsManager.hand_in_job(
+            service,
+            guy.address,
+            guy.key,
+            contract.ten der_id
+        )    
+
+    ContractsManager.hand_in_job(
+        service,
+        comp.address,
+        comp.key,
+        contract.tender_id
+    )
+
+    contract = ContractsManager.get_contract_full(service, contract.contract_id)
+
+    assert contract.status == ContractStatus.Finished    
+
+    
+

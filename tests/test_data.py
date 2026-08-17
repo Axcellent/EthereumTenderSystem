@@ -28,6 +28,13 @@ NORMAL_BID = 2
 GOOD_BID = 3
 BEST_BID = 4
 
+REP_NOT_ACC = 0
+REP_NOT_ACC_RESP = 1
+REP_ACC = 2
+REP_ACC_RESP = 3
+REP_FINAL = 4
+REP_FINAL_RESP = 5
+
 @pytest.fixture(scope="session")
 def existing_users():
     return [
@@ -134,5 +141,40 @@ def bids_data() -> list[BidCreateDTO]:
             tender_id = 1,
             price = 1_000_000,
             deadline = datetime.datetime.now() + datetime.timedelta(days= 100),
+        ),
+    ]
+
+@pytest.fixture()
+def reports_data():
+    return [
+        ReportCreateDTO(
+            tender_id=1,
+            description="We have done half of work! Photos are on: https://somesite.com",
+            response=False
+        ),
+        ReportCreateDTO(
+            tender_id=1,
+            description="Nah, thats bad, remake part 2.4, 2.5, 3.1-3.5",
+            response=True
+        ),
+        ReportCreateDTO(
+            tender_id=1,
+            description="Did that better! Check on prev link",
+            response=False
+        ),
+        ReportCreateDTO(
+            tender_id=1,
+            description="Good! Waiting for another part",
+            response=True
+        ),
+        ReportCreateDTO(
+            tender_id=1,
+            description="All done! We tried our best, check on https://somesite.com and ipfs://29safh30op12",
+            response=False
+        ),
+        ReportCreateDTO(
+            tender_id=1,
+            description="Very good!! Thank you for all you've done!",
+            response=True
         ),
     ]

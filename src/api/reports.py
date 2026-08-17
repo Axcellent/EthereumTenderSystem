@@ -45,12 +45,13 @@ class ReportsManager():
         service: BlockchainService,
         report_id: uint,
     ) -> ReportGetDTO:
-        data = service.view(GET_REPORT, report_id)
+        data = service.view(GET_REPORT, [report_id])
 
         return ReportGetDTO(
             contract_id=data[0],
-            description=data[1],
-            status=data[2]
+            reporter=data[1],
+            description=data[2],
+            status=data[3]
         )
     
     @staticmethod
@@ -58,7 +59,7 @@ class ReportsManager():
         service: BlockchainService,
         contract_id: uint
     ) -> list[ReportGetDTO]:
-        reports = service.view(GET_REPORTS, contract_id)
+        reports = service.view(GET_REPORTS, [contract_id])
 
         data = []
         for report_id in reports:

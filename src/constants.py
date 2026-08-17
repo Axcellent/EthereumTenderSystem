@@ -32,7 +32,7 @@ GET_USER_BIDS = 'usersBids'
 CREATE_REPORT = 'submitReport'
 REVIEW_REPORT = 'reviewReport'
 # view
-GET_REPORTS = 'contractReports'
+GET_REPORTS = 'getContractReports'
 GET_REPORT = 'reports'
 
 # REVIEWS
