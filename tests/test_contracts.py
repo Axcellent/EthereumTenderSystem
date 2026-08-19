@@ -12,13 +12,13 @@ from models.contracts_dto import *
 from models.reports_dto import *
 from models.reviews_dto import *
 
-from api import BlockchainService
-from api.tenders import TendersManager
-from api.users import UsersManager
-from api.bids import BidsManager
-from api.contracts import ContractsManager
-from api.reports import ReportsManager
-from api.reviews import ReviewsManager
+from services import BlockchainService
+from services.tenders import TendersService
+from services.users import UsersService
+from services.bids import BidsService
+from services.contracts import ContractsService
+from services.reports import ReportsService
+from services.reviews import ReviewsService
 
 from test_data import (existing_users, 
                         users_data,
@@ -61,7 +61,7 @@ def test_contract_creating(
     best_bid : BidGetDTO = submitted_bids(BEST_BID, MAIN_TENDER, GOOD_COMP)
 
     with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
-        ContractsManager.open_contract(
+        ContractsService.open_contract(
             service,
             gov.address,
             gov.key,
@@ -71,14 +71,14 @@ def test_contract_creating(
     import time
     time.sleep(5)
 
-    TendersManager.close_tender(
+    TendersService.close_tender(
         service,
         gov.address,
         gov.key,
         best_bid.tender_id
     )
 
-    ContractsManager.open_contract(
+    ContractsService.open_contract(
         service,
         gov.address,
         gov.key,
@@ -86,14 +86,14 @@ def test_contract_creating(
     )
 
     with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
-        ContractsManager.open_contract(
+        ContractsService.open_contract(
             service,
             gov.address,
             gov.key,
             best_bid.tender_id
         )
 
-    contract: ContractGetFullDTO = ContractsManager.get_contract_full(service, 1)
+    contract: ContractGetFullDTO = ContractsService.get_contract_full(service, 1)
 
     assert contract.deadline == best_bid.deadline
     assert contract.amount == best_bid.price
@@ -110,7 +110,7 @@ def test_finance_contract(
     contract: ContractGetFullDTO = opened_contracts(BEST_BID, MAIN_TENDER, GOV, COMP)
 
     with pytest.raises(RuntimeError, match="Only tender creator can do this"):
-        ContractsManager.finance_contract(
+        ContractsService.finance_contract(
             service,
             comp.address,
             comp.key,
@@ -120,7 +120,7 @@ def test_finance_contract(
 
     assert contract.status == ContractStatus.Pending    
 
-    ContractsManager.finance_contract(
+    ContractsService.finance_contract(
         service,
         gov.address,
         gov.key,
@@ -128,7 +128,7 @@ def test_finance_contract(
         contract.amount
     )
 
-    contract = ContractsManager.get_contract_full(service, contract.contract_id)
+    contract = ContractsService.get_contract_full(service, contract.contract_id)
 
     assert contract.status == ContractStatus.Executing    
 
@@ -143,7 +143,7 @@ def test_complete_job(
     guy: LocalAccount = registered_users(GUY)
     contract: ContractGetFullDTO = opened_contracts(BEST_BID, MAIN_TENDER, GOV, GOOD_COMP)
 
-    ContractsManager.finance_contract(
+    ContractsService.finance_contract(
         service,
         gov.address,
         gov.key,
@@ -151,7 +151,7 @@ def test_complete_job(
         contract.amount
     )
 
-    ReportsManager.create_report(
+    ReportsService.create_report(
         service,
         comp.address,
         comp.key,
@@ -159,22 +159,22 @@ def test_complete_job(
     )
 
     with pytest.raises(RuntimeError, match="You are not contractor of this contract"):
-        ContractsManager.hand_in_job(
+        ContractsService.hand_in_job(
             service,
             guy.address,
             guy.key,
             contract.tender_id
         )    
 
-    ContractsManager.hand_in_job(
+    ContractsService.hand_in_job(
         service,
         comp.address,
         comp.key,
         contract.tender_id
     )
 
-    contract = ContractsManager.get_contract_full(service, contract.contract_id)
-    tender = TendersManager.get_tender_full(service, contract.tender_id)
+    contract = ContractsService.get_contract_full(service, contract.contract_id)
+    tender = TendersService.get_tender_full(service, contract.tender_id)
 
     assert contract.status == ContractStatus.Finished
     assert tender.status == TenderStatus.Executing
@@ -190,7 +190,7 @@ def test_accept_job(
     guy: LocalAccount = registered_users(GUY)
     contract: ContractGetFullDTO = opened_contracts(BEST_BID, MAIN_TENDER, GOV, GOOD_COMP)
 
-    ContractsManager.finance_contract(
+    ContractsService.finance_contract(
         service,
         gov.address,
         gov.key,
@@ -198,7 +198,7 @@ def test_accept_job(
         contract.amount
     )
 
-    ReportsManager.create_report(
+    ReportsService.create_report(
         service,
         comp.address,
         comp.key,
@@ -206,21 +206,21 @@ def test_accept_job(
     )
 
     with pytest.raises(RuntimeError, match="You are not contractor of this contract"):
-        ContractsManager.hand_in_job(
+        ContractsService.hand_in_job(
             service,
             guy.address,
             guy.key,
             contract.tender_id
         )    
 
-    ContractsManager.hand_in_job(
+    ContractsService.hand_in_job(
         service,
         comp.address,
         comp.key,
         contract.tender_id
     )
 
-    ContractsManager.review_job(
+    ContractsService.review_job(
         service,
         gov.address,
         gov.key,
@@ -230,26 +230,26 @@ def test_accept_job(
             strict=False
         ))
 
-    contract = ContractsManager.get_contract_full(service, contract.contract_id)
-    tender = TendersManager.get_tender_full(service, contract.tender_id)
+    contract = ContractsService.get_contract_full(service, contract.contract_id)
+    tender = TendersService.get_tender_full(service, contract.tender_id)
 
     assert contract.status == ContractStatus.Executing
     assert tender.status == TenderStatus.Executing
 
-    ContractsManager.hand_in_job(
+    ContractsService.hand_in_job(
         service,
         comp.address,
         comp.key,
         contract.tender_id
     )
     
-    contract = ContractsManager.get_contract_full(service, contract.contract_id)
-    tender = TendersManager.get_tender_full(service, contract.tender_id)
+    contract = ContractsService.get_contract_full(service, contract.contract_id)
+    tender = TendersService.get_tender_full(service, contract.tender_id)
 
     assert contract.status == ContractStatus.Finished
     assert tender.status == TenderStatus.Executing
 
-    ContractsManager.review_job(
+    ContractsService.review_job(
         service,
         gov.address,
         gov.key,
@@ -260,7 +260,7 @@ def test_accept_job(
         ))
 
     with pytest.raises(RuntimeError, match="This tender is not executing"):
-        ContractsManager.review_job(
+        ContractsService.review_job(
             service,
             gov.address,
             gov.key,
@@ -270,8 +270,8 @@ def test_accept_job(
                 strict=False
             ))
 
-    contract = ContractsManager.get_contract_full(service, contract.contract_id)
-    tender = TendersManager.get_tender_full(service, contract.tender_id)
+    contract = ContractsService.get_contract_full(service, contract.contract_id)
+    tender = TendersService.get_tender_full(service, contract.tender_id)
 
     assert contract.status == ContractStatus.Completed
     assert tender.status == TenderStatus.Completed

@@ -1,4 +1,4 @@
-from api import TxReceipt, BlockchainService
+from services import TxReceipt, BlockchainService
 
 from models.common import (addr,
                            pkey)
@@ -8,7 +8,7 @@ from constants import (CREATE_REVIEW,
                        EXAMINE_REVIEW,
                        GET_REVIEW)
 
-class ReviewsManager():
+class ReviewsService():
     @staticmethod
     def submit_review(
         service: BlockchainService,

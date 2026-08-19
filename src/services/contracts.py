@@ -1,4 +1,4 @@
-from api import TxReceipt, BlockchainService
+from services import TxReceipt, BlockchainService
 
 from models.common import (uint,
                            addr,
@@ -12,7 +12,7 @@ from constants import (OPEN_CONTRACT,
                        GET_TENDER_CONTRACT, 
                        GET_CONTRACT)
 
-class ContractsManager():
+class ContractsService():
     @staticmethod
     def open_contract(
         service: BlockchainService,
@@ -116,7 +116,7 @@ class ContractsManager():
             args=[tender_id]
         )
 
-        data = ContractsManager.get_contract_full(
+        data = ContractsService.get_contract_full(
             service,
             contract_id
         )

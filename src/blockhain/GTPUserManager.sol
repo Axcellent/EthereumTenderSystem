@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /**
- * @title GovernmentTenderSystem UsersManager
+ * @title GovernmentTenderSystem UsersService
  * @dev Инкапсулирует логику работы с информацией о компаниях
  */
 contract GTS_Users

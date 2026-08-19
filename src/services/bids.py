@@ -1,4 +1,4 @@
-from api import TxReceipt, BlockchainService
+from services import TxReceipt, BlockchainService
 
 from models.common import (addr,
                            uint,
@@ -11,7 +11,7 @@ from constants import (SUBMIT_BID,
                        GET_USER_BIDS,
                        GET_BID)
 
-class BidsManager:
+class BidsService:
     @staticmethod
     def submit_bid(
         service: BlockchainService,
@@ -68,7 +68,7 @@ class BidsManager:
 
         data = []
         for bid_id in bids:
-            data.append(BidsManager.get_bid(
+            data.append(BidsService.get_bid(
                 service,
                 bid_id
             ))
@@ -84,7 +84,7 @@ class BidsManager:
 
         data = []
         for bid_id in bids:
-            data.append(BidsManager.get_bid(
+            data.append(BidsService.get_bid(
                 service,
                 bid_id
             ))

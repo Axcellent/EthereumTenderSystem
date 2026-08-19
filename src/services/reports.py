@@ -1,4 +1,4 @@
-from api import TxReceipt, BlockchainService
+from services import TxReceipt, BlockchainService
 
 from models.common import (addr,
                            uint,
@@ -10,7 +10,7 @@ from constants import (CREATE_REPORT,
                        GET_REPORTS,
                        GET_REPORT)
 
-class ReportsManager():
+class ReportsService():
     @staticmethod
     def create_report(
         service: BlockchainService,
@@ -63,7 +63,7 @@ class ReportsManager():
 
         data = []
         for report_id in reports:
-            data.append(ReportsManager.get_report(
+            data.append(ReportsService.get_report(
                 service,
                 report_id
             ))

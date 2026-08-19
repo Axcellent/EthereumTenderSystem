@@ -12,13 +12,13 @@ from models.contracts_dto import *
 from models.reports_dto import *
 from models.reviews_dto import *
 
-from api import BlockchainService
-from api.tenders import TendersManager
-from api.users import UsersManager
-from api.bids import BidsManager
-from api.contracts import ContractsManager
-from api.reports import ReportsManager
-from api.reviews import ReviewsManager
+from services import BlockchainService
+from services.tenders import TendersService
+from services.users import UsersService
+from services.bids import BidsService
+from services.contracts import ContractsService
+from services.reports import ReportsService
+from services.reviews import ReviewsService
 
 from test_data import (existing_users, 
                         users_data,
@@ -77,14 +77,14 @@ def test_user_register(
     users_data: list[UserCreateDTO], 
     user_no
     ):
-    UsersManager.register(
+    UsersService.register(
         service,
         existing_users[user_no].address,
         existing_users[user_no].key,
         users_data[user_no]
     )
 
-    registered_user = UsersManager.get_user_full(service, existing_users[user_no].address)
+    registered_user = UsersService.get_user_full(service, existing_users[user_no].address)
 
     assert users_data[user_no].title == registered_user.title
     assert users_data[user_no].description == registered_user.description
@@ -97,7 +97,7 @@ def test_user_duplicate_register(
     existing_users: list[LocalAccount], 
     users_data: list[UserCreateDTO], 
     ):
-    UsersManager.register(
+    UsersService.register(
         service,
         existing_users[0].address,
         existing_users[0].key,
@@ -105,7 +105,7 @@ def test_user_duplicate_register(
     )
 
     with pytest.raises(RuntimeError):
-        UsersManager.register(
+        UsersService.register(
             service,
             existing_users[0].address,
             existing_users[0].key,
@@ -117,7 +117,7 @@ def test_get_reputation(
     registered_users
 ):
     gov: LocalAccount = registered_users(GOV)
-    rep = UsersManager.get_reputation(service, gov.address)
+    rep = UsersService.get_reputation(service, gov.address)
     assert rep == 0
 
 def test_ban_user(
@@ -129,7 +129,7 @@ def test_ban_user(
     gov: LocalAccount = registered_users(GOV)
     guy: LocalAccount = existing_users[GUY]
     with pytest.raises(RuntimeError, match="User is not active"):
-            UsersManager.ban_user(
+            UsersService.ban_user(
                 service,
                 gov.address,
                 gov.key,
@@ -140,7 +140,7 @@ def test_ban_user(
     # test not moderator    
     guy: LocalAccount = registered_users(GUY)
     with pytest.raises(RuntimeError, match="Permition denied"):
-            UsersManager.ban_user(
+            UsersService.ban_user(
                 service,
                 guy.address,
                 guy.key,
@@ -149,7 +149,7 @@ def test_ban_user(
             )
 
     # test OK
-    tx_receipt = UsersManager.ban_user(
+    tx_receipt = UsersService.ban_user(
         service,
         gov.address,
         gov.key,
@@ -163,12 +163,12 @@ def test_ban_user(
     assert event_args['id'] == guy.address
     assert event_args['reason'] == "Bad words"
 
-    user = UsersManager.get_user_short(service, guy.address)
+    user = UsersService.get_user_short(service, guy.address)
     assert user.status == UserStatus.Banned
 
     # test duplicate ban
     with pytest.raises(RuntimeError, match="User is not active"):
-        UsersManager.ban_user(
+        UsersService.ban_user(
             service,
             gov.address,
             gov.key,
@@ -185,7 +185,7 @@ def test_delete_user(
     gov: LocalAccount = registered_users(GOV)
     guy: LocalAccount = existing_users[GUY]
     with pytest.raises(RuntimeError, match="User is not in system"):
-            UsersManager.delete_user(
+            UsersService.delete_user(
                 service,
                 gov.address,
                 gov.key,
@@ -196,7 +196,7 @@ def test_delete_user(
     # test not moderator    
     guy: LocalAccount = registered_users(GUY)
     with pytest.raises(RuntimeError, match="Permition denied"):
-            UsersManager.delete_user(
+            UsersService.delete_user(
                 service,
                 guy.address,
                 guy.key,
@@ -205,7 +205,7 @@ def test_delete_user(
             )
 
     # test OK
-    tx_receipt = UsersManager.delete_user(
+    tx_receipt = UsersService.delete_user(
         service,
         gov.address,
         gov.key,
@@ -219,12 +219,12 @@ def test_delete_user(
     assert event_args['id'] == guy.address
     assert event_args['reason'] == "Bad words"
 
-    user = UsersManager.get_user_short(service, guy.address)
+    user = UsersService.get_user_short(service, guy.address)
     assert user.status == UserStatus.Deleted
 
     # test duplicate delete
     with pytest.raises(RuntimeError, match="User is not in system"):
-        UsersManager.delete_user(
+        UsersService.delete_user(
             service,
             gov.address,
             gov.key,
@@ -242,7 +242,7 @@ def test_ban_and_unban_user(
     gov: LocalAccount = registered_users(GOV)
     guy: LocalAccount = existing_users[GUY]
     with pytest.raises(RuntimeError, match="User is not banned"):
-            UsersManager.unban_user(
+            UsersService.unban_user(
                 service,
                 gov.address,
                 gov.key,
@@ -253,7 +253,7 @@ def test_ban_and_unban_user(
     # test not moderator    
     guy: LocalAccount = registered_users(GUY)
     with pytest.raises(RuntimeError, match="Permition denied"):
-            UsersManager.unban_user(
+            UsersService.unban_user(
                 service,
                 guy.address,
                 guy.key,
@@ -261,7 +261,7 @@ def test_ban_and_unban_user(
                 "forgiven"
             )
 
-    UsersManager.ban_user(
+    UsersService.ban_user(
         service,
         gov.address,
         gov.key,
@@ -270,7 +270,7 @@ def test_ban_and_unban_user(
     )
 
     # test OK
-    tx_receipt = UsersManager.unban_user(
+    tx_receipt = UsersService.unban_user(
         service,
         gov.address,
         gov.key,
@@ -284,12 +284,12 @@ def test_ban_and_unban_user(
     assert event_args['id'] == guy.address
     assert event_args['reason'] == "forgiven"
 
-    user = UsersManager.get_user_short(service, guy.address)
+    user = UsersService.get_user_short(service, guy.address)
     assert user.status == UserStatus.Active
 
     # test duplicate unaban
     with pytest.raises(RuntimeError, match="User is not banned"):
-        UsersManager.unban_user(
+        UsersService.unban_user(
             service,
             gov.address,
             gov.key,
@@ -298,7 +298,7 @@ def test_ban_and_unban_user(
         )
 
     with pytest.raises(RuntimeError, match="User is not banned"):
-        UsersManager.unban_user(
+        UsersService.unban_user(
             service,
             gov.address,
             gov.key,

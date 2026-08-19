@@ -12,7 +12,7 @@ from models.contracts_dto import *
 from models.reports_dto import *
 from models.reviews_dto import *
 
-from api.bids import BidsManager
+from services.bids import BidsService
 
 from test_data import *
 from tests_common import *

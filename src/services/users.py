@@ -1,4 +1,4 @@
-from api import BlockchainService, TxReceipt
+from services import BlockchainService, TxReceipt
 from models.users_dto import UserCreateDTO, UserGetFullDTO, UserGetShortDTO
 
 from models.common import (pkey,
@@ -12,7 +12,7 @@ from constants import (USER_REGISTER,
                         BAN_USER, 
                         UNBAN_USER)
 
-class UsersManager:
+class UsersService:
     @staticmethod
     def register(
         service: BlockchainService,

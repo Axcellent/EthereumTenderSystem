@@ -12,13 +12,13 @@ from models.contracts_dto import *
 from models.reports_dto import *
 from models.reviews_dto import *
 
-from api import BlockchainService
-from api.tenders import TendersManager
-from api.users import UsersManager
-from api.bids import BidsManager
-from api.contracts import ContractsManager
-from api.reports import ReportsManager
-from api.reviews import ReviewsManager
+from services import BlockchainService
+from services.tenders import TendersService
+from services.users import UsersService
+from services.bids import BidsService
+from services.contracts import ContractsService
+from services.reports import ReportsService
+from services.reviews import ReviewsService
 
 from test_data import (existing_users, 
                         users_data,
@@ -48,20 +48,20 @@ def test_send_review(
     gov: LocalAccount = registered_users(GOV)
     comp: LocalAccount = registered_users(COMP)
 
-    TendersManager.create_tender(
+    TendersService.create_tender(
         service,
         gov.address,
         gov.key,
         tenders_data[MAIN_TENDER])
 
     with pytest.raises(RuntimeError, match="Tender is not executing"):
-        TendersManager.create_tender(
+        TendersService.create_tender(
             service,
             comp.address,
             comp.key,
             tenders_data[SUBTENDER])
 
-    tender = TendersManager.get_tender_full(service, 1)
+    tender = TendersService.get_tender_full(service, 1)
 
     assert tender.description == tenders_data[MAIN_TENDER].description
     assert tender.budget == tenders_data[MAIN_TENDER].budget
@@ -111,7 +111,7 @@ def test_tender_close(
     tender: TenderGetFullDTO = created_tenders(MAIN_TENDER, GOV)
 
     with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
-        TendersManager.close_tender(
+        TendersService.close_tender(
             service,
             gov.address,
             gov.key,
@@ -122,14 +122,14 @@ def test_tender_close(
     time.sleep(5)
 
     with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
-        TendersManager.close_tender(
+        TendersService.close_tender(
             service,
             comp.address,
             comp.key,
             1
         )
 
-    TendersManager.close_tender(
+    TendersService.close_tender(
         service,
         gov.address,
         gov.key,
@@ -137,13 +137,13 @@ def test_tender_close(
     )
 
     with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
-        TendersManager.close_tender(
+        TendersService.close_tender(
             service,
             gov.address,
             gov.key,
             1
         )
 
-    tender: TenderGetFullDTO = TendersManager.get_tender_full(service, 1)
+    tender: TenderGetFullDTO = TendersService.get_tender_full(service, 1)
 
     assert tender.status == TenderStatus.Closed

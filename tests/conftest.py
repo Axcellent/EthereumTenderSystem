@@ -3,7 +3,7 @@ from web3 import Web3
 from eth_account import Account
 from eth_account.account import LocalAccount
 from typing import Optional
-from api import BlockchainService
+from services import BlockchainService
 
 @pytest.fixture(autouse=True)
 def reset_blockchain(service):

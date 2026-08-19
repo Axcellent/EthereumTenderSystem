@@ -12,13 +12,13 @@ from models.contracts_dto import *
 from models.reports_dto import *
 from models.reviews_dto import *
 
-from api import BlockchainService
-from api.tenders import TendersManager
-from api.users import UsersManager
-from api.bids import BidsManager
-from api.contracts import ContractsManager
-from api.reports import ReportsManager
-from api.reviews import ReviewsManager
+from services import BlockchainService
+from services.tenders import TendersService
+from services.users import UsersService
+from services.bids import BidsService
+from services.contracts import ContractsService
+from services.reports import ReportsService
+from services.reviews import ReviewsService
 
 from test_data import *
 
@@ -35,13 +35,13 @@ def registered_users(
             ) -> LocalAccount:
         exists = False
         try:
-            user = UsersManager.get_user_short(service, existing_users[user_id].address)
+            user = UsersService.get_user_short(service, existing_users[user_id].address)
             exists = True
         except:
             pass
 
         if not exists:
-            UsersManager.register(
+            UsersService.register(
                 service,
                 existing_users[user_id].address,
                 existing_users[user_id].key,
@@ -66,21 +66,21 @@ def created_tenders(
 
         exists = False
         try:
-            tender = TendersManager.get_tender_full(service, tender_no + 1)
+            tender = TendersService.get_tender_full(service, tender_no + 1)
             exists = True
         except:
             pass
 
         if not exists:
             user = registered_users(user_id)
-            TendersManager.create_tender(
+            TendersService.create_tender(
                 service,
                 user.address,
                 user.key,
                 tenders_data[tender_no] if use_default or tender_data == None else tender_data
                 )
             
-        return TendersManager.get_tender_full(service, tender_no + 1)
+        return TendersService.get_tender_full(service, tender_no + 1)
     return _create_tender
 
 @pytest.fixture
@@ -104,13 +104,13 @@ def submitted_bids(
             bid_data = bids_data[bid_no]
             bid_data.tender_id = tender_id + 1
 
-        BidsManager.submit_bid(
+        BidsService.submit_bid(
             service,
             user.address,
             user.key,
             bid_data
             )
-        return BidsManager.get_bid(service, BlockchainService.view(service, "bidCounter"))
+        return BidsService.get_bid(service, BlockchainService.view(service, "bidCounter"))
     return _create_bid
 
 @pytest.fixture
@@ -135,12 +135,12 @@ def opened_contracts(
     
         time.sleep(5)
 
-        TendersManager.close_tender(service, user.address, user.key, tender_id + 1)
-        ContractsManager.open_contract(
+        TendersService.close_tender(service, user.address, user.key, tender_id + 1)
+        ContractsService.open_contract(
             service,
             user.address,
             user.key,
             tender_id + 1
         )
-        return ContractsManager.get_tender_contract(service, tender_id + 1)
+        return ContractsService.get_tender_contract(service, tender_id + 1)
     return _open_contract

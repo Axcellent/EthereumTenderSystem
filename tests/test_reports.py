@@ -12,13 +12,13 @@ from models.contracts_dto import *
 from models.reports_dto import *
 from models.reviews_dto import *
 
-from api import BlockchainService
-from api.tenders import TendersManager
-from api.users import UsersManager
-from api.bids import BidsManager
-from api.contracts import ContractsManager
-from api.reports import ReportsManager
-from api.reviews import ReviewsManager
+from services import BlockchainService
+from services.tenders import TendersService
+from services.users import UsersService
+from services.bids import BidsService
+from services.contracts import ContractsService
+from services.reports import ReportsService
+from services.reviews import ReviewsService
 
 from test_data import (existing_users, 
                         users_data,
@@ -69,7 +69,7 @@ def test_report_flow(
     
     report_data: ReportGetDTO = reports_data[REP_NOT_ACC]
 
-    ContractsManager.finance_contract(
+    ContractsService.finance_contract(
         service,
         gov.address,
         gov.key,
@@ -77,14 +77,14 @@ def test_report_flow(
         contract.amount
     )
 
-    ReportsManager.create_report(
+    ReportsService.create_report(
         service,
         comp.address,
         comp.key,
         report_data
     )
     
-    reports = ReportsManager.get_contract_reports(service, contract_id)
+    reports = ReportsService.get_contract_reports(service, contract_id)
     assert len(reports) == 1
     report = reports[0]
     assert report.description == report_data.description
@@ -93,13 +93,13 @@ def test_report_flow(
     report_counter = service.view('reportCounter')
     report_id = report_counter
 
-    contract = ContractsManager.get_contract_full(
+    contract = ContractsService.get_contract_full(
         service,
         contract.contract_id
     )
     assert contract.last_report_id == report_id
     
-    ReportsManager.review_report(
+    ReportsService.review_report(
         service,
         owner,
         gov.key,
@@ -107,11 +107,11 @@ def test_report_flow(
         False
     )
     
-    report_updated = ReportsManager.get_report(service, report_id)
+    report_updated = ReportsService.get_report(service, report_id)
     assert report_updated.status == DocStatus.Rejected
     
     with pytest.raises(RuntimeError, match="This report is not pending"):
-        ReportsManager.review_report(
+        ReportsService.review_report(
             service,
             owner,
             gov.key,
@@ -121,7 +121,7 @@ def test_report_flow(
 
     guy: LocalAccount = registered_users(GUY)
     with pytest.raises(RuntimeError, match="You are not the perfomer of contract to create report"):
-        ReportsManager.create_report(
+        ReportsService.create_report(
             service,
             guy.address,
             guy.key,
@@ -130,14 +130,14 @@ def test_report_flow(
     
     report_data2: ReportGetDTO = reports_data[REP_NOT_ACC_RESP]
 
-    ReportsManager.create_report(
+    ReportsService.create_report(
         service,
         owner,
         gov.key,
         report_data2
     )
     
-    reports = ReportsManager.get_contract_reports(service, contract_id)
+    reports = ReportsService.get_contract_reports(service, contract_id)
     assert len(reports) == 2    
     assert any(r.description == report_data2.description for r in reports)
 
