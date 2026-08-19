@@ -12,84 +12,73 @@ from models.contracts_dto import *
 from models.reports_dto import *
 from models.reviews_dto import *
 
-from api import BlockchainService
-from api.tenders import TendersManager
-from api.users import UsersManager
 from api.bids import BidsManager
-from api.contracts import ContractsManager
-from api.reports import ReportsManager
-from api.reviews import ReviewsManager
 
-from test_data import (existing_users, 
-                        users_data,
-                        tenders_data,
-                        bids_data,
-                        GOV,
-                        COMP,
-                        GOOD_COMP,
-                        BAD_COMP,
-                        GUY,
-                        TENDER,
-                        SUBTENDER,
-                        BEST_BID,
-                        GOOD_BID,
-                        LONG_BID,
-                        NORMAL_BID,
-                        EXPENSIVE_BID
-                        )
-
-from tests_common import registered_users, created_tenders
-
-import time
+from test_data import *
+from tests_common import *
 
 from constants import *
 
-@pytest.mark.parametrize("bid_id, user_id", [(EXPENSIVE_BID, BAD_COMP)])
-def test_bid_creating(
-    service,
-    registered_users,
-    created_tenders,
-    bids_data,
-    bid_id,
-    user_id
-):    
-    comp: LocalAccount = registered_users(user_id)
-    tender: TenderGetFullDTO = created_tenders(TENDER, GOV)
 
-    BidsManager.submit_bid(
-        service,
-        comp.address,
-        comp.key,
-        bids_data[bid_id]
-    )
+@pytest.mark.parametrize(
+    "field_name, invalid_value, expected_error_substring",
+    [        
+        ("tender_id", 0, "Input should be greater than 0"),
+
+        ("price", "a", "Input should be a valid integer"),
+        ("price", 0, "Input should be greater than 0"),
+
+        ("deadline", "2025-01-01", "Can receive only datetime.datetime"),
+        ("deadline", 1234567890, "Can receive only datetime.datetime"),
+        ("deadline", None, "Can receive only datetime.datetime"),
+    ]
+)
+def test_bid_validation(
+    bids_data,
+    field_name, 
+    invalid_value, 
+    expected_error_substring
+    ):
+    data = bids_data[0].model_dump()
+    data[field_name] = invalid_value
+
+    with pytest.raises(ValidationError) as exc_info:
+        BidCreateDTO(**data)
+
+    assert expected_error_substring in str(exc_info.value)
+
+def test_bid_create_and_get(
+    service,
+    submitted_bids,
+    registered_users,
+    bids_data
+):    
+    comp = registered_users(GOOD_COMP)
+    bid = submitted_bids(BEST_BID, MAIN_TENDER, GOOD_COMP)
+
+    assert bid.deadline.timestamp() == bids_data[BEST_BID].deadline
+    assert bid.price == bids_data[BEST_BID].price
+    assert bid.bidder == comp.address
+
+def test_second_bid(
+    service,
+    submitted_bids,
+    registered_users,
+    bids_data
+):    
+    comp = registered_users(GOOD_COMP)
+    bid = submitted_bids(BEST_BID, MAIN_TENDER, GOOD_COMP)
 
     with pytest.raises(RuntimeError, match="You have already submitted a bid for this tender"):
-        BidsManager.submit_bid(
-            service,
-            comp.address,
-            comp.key,
-            bids_data[bid_id]
-        )
-
-    bid = BidsManager.get_bid(service, 1)
-
-    assert bid.deadline.timestamp() == bids_data[bid_id].deadline
-    assert bid.price == bids_data[bid_id].price
-    assert bid.bidder == comp.address
+        submitted_bids(BEST_BID, MAIN_TENDER, GOOD_COMP)        
 
 def test_submit_on_own_tender(
     service,
     registered_users,
     created_tenders,
+    submitted_bids,
     bids_data 
-):    
-    gov: LocalAccount = registered_users(GOV)
-    tender: TenderGetFullDTO = created_tenders(TENDER, GOV)    
+):      
 
     with pytest.raises(RuntimeError, match="You are creator of this tender"):
-        BidsManager.submit_bid(
-            service,
-            gov.address,
-            gov.key,
-            bids_data[EXPENSIVE_BID]
-        )
+        submitted_bids(BEST_BID, MAIN_TENDER, GOV)  

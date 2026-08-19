@@ -19,7 +19,7 @@ class BidGetDTO(BaseModel):
             new_value: datetime.datetime = datetime.datetime.fromtimestamp(value)
             return new_value
         except:
-            raise ValidationError("Cannot convert from UNIX timestamp to Date-Time")
+            raise ValueError("Cannot convert from UNIX timestamp to Date-Time")
 
 class BidCreateDTO(BaseModel):
     tender_id: uint    
@@ -29,9 +29,9 @@ class BidCreateDTO(BaseModel):
     @field_validator("deadline", mode="before")
     def validate_deadline(cls, value: datetime.datetime):
         if not isinstance(value, datetime.datetime):
-            raise ValidationError("Can receive only datetime.datetime")
+            raise ValueError("Can receive only datetime.datetime")
         try:
             v: unix_time = int(value.timestamp())
             return v
         except:
-            raise ValidationError("Cannot convert from Date-Time timestamp to UNIX")
+            raise ValueError("Cannot convert from Date-Time timestamp to UNIX")

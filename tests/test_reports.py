@@ -30,7 +30,7 @@ from test_data import (existing_users,
                         GOOD_COMP,
                         BAD_COMP,
                         GUY,
-                        TENDER,
+                        MAIN_TENDER,
                         SUBTENDER,
                         BEST_BID,
                         GOOD_BID,
@@ -63,7 +63,7 @@ def test_report_flow(
     owner = gov.address
     contractor = comp.address
     
-    contract: ContractGetFullDTO = opened_contracts(BEST_BID, TENDER, GOV, GOOD_COMP)
+    contract: ContractGetFullDTO = opened_contracts(BEST_BID, MAIN_TENDER, GOV, GOOD_COMP)
     tender_id = contract.tender_id
     contract_id = contract.contract_id
     

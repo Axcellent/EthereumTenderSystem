@@ -1,4 +1,4 @@
-from web3 import Web3
+from web3 import Web3, WebSocketProvider
 from web3.types import TxParams, TxReceipt
 from web3.exceptions import Web3RPCError
 from web3.contract.contract import ContractFunction, Contract
@@ -20,12 +20,7 @@ class BlockchainService:
         contract_address: str,
         contract_abi_file: str
     ):
-        session = requests.Session()
-        session.timeout = (5, 60)
-        session.headers.update({'Connection': 'keep-alive'})
-
-        #self.web3 = Web3(Web3.HTTPProvider(provider_url, session=session))
-        self.web3 = Web3(Web3.HTTPProvider(provider_url, request_kwargs={'timeout': 120}))
+        self.web3 = Web3(Web3.LegacyWebSocketProvider("ws://localhost:7545"))
         if not self.web3 or not self.web3.is_connected():
             raise ConnectionError("Unable to connect to provider")
 
@@ -90,6 +85,9 @@ class BlockchainService:
 
 
         rx: TxReceipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
+
+        import time
+        time.sleep(0.3)
 
         return rx
 

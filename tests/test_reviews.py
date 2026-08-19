@@ -40,7 +40,7 @@ import time
 from constants import *
 
 
-def test_tenders_chain(
+def test_send_review(
     service,
     registered_users,
     tenders_data

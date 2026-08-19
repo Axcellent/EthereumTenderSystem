@@ -30,7 +30,7 @@ from test_data import (existing_users,
                         GOOD_COMP,
                         BAD_COMP,
                         GUY,
-                        TENDER,
+                        MAIN_TENDER,
                         SUBTENDER,
                         BEST_BID,
                         GOOD_BID,
@@ -53,12 +53,12 @@ def test_contract_creating(
     submitted_bids
 ):    
     gov: LocalAccount = registered_users(GOV)
-    tender: TenderGetFullDTO = created_tenders(TENDER, GOV)
+    tender: TenderGetFullDTO = created_tenders(MAIN_TENDER, GOV)
 
-    bad_bid1 : BidGetDTO = submitted_bids(EXPENSIVE_BID, TENDER, BAD_COMP)
-    bad_bid2 : BidGetDTO = submitted_bids(LONG_BID, TENDER, GUY)
-    bad_bid3 : BidGetDTO = submitted_bids(NORMAL_BID, TENDER, COMP)
-    best_bid : BidGetDTO = submitted_bids(BEST_BID, TENDER, GOOD_COMP)
+    bad_bid1 : BidGetDTO = submitted_bids(EXPENSIVE_BID, MAIN_TENDER, BAD_COMP)
+    bad_bid2 : BidGetDTO = submitted_bids(LONG_BID, MAIN_TENDER, GUY)
+    bad_bid3 : BidGetDTO = submitted_bids(NORMAL_BID, MAIN_TENDER, COMP)
+    best_bid : BidGetDTO = submitted_bids(BEST_BID, MAIN_TENDER, GOOD_COMP)
 
     with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
         ContractsManager.open_contract(
@@ -107,7 +107,7 @@ def test_finance_contract(
 ):
     gov: LocalAccount = registered_users(GOV)    
     comp: LocalAccount = registered_users(COMP)
-    contract: ContractGetFullDTO = opened_contracts(BEST_BID, TENDER, GOV, COMP)
+    contract: ContractGetFullDTO = opened_contracts(BEST_BID, MAIN_TENDER, GOV, COMP)
 
     with pytest.raises(RuntimeError, match="Only tender creator can do this"):
         ContractsManager.finance_contract(
@@ -141,7 +141,7 @@ def test_complete_job(
     gov: LocalAccount = registered_users(GOV)    
     comp: LocalAccount = registered_users(GOOD_COMP)
     guy: LocalAccount = registered_users(GUY)
-    contract: ContractGetFullDTO = opened_contracts(BEST_BID, TENDER, GOV, GOOD_COMP)
+    contract: ContractGetFullDTO = opened_contracts(BEST_BID, MAIN_TENDER, GOV, GOOD_COMP)
 
     ContractsManager.finance_contract(
         service,
@@ -163,7 +163,7 @@ def test_complete_job(
             service,
             guy.address,
             guy.key,
-            contract.ten der_id
+            contract.tender_id
         )    
 
     ContractsManager.hand_in_job(
@@ -174,8 +174,105 @@ def test_complete_job(
     )
 
     contract = ContractsManager.get_contract_full(service, contract.contract_id)
+    tender = TendersManager.get_tender_full(service, contract.tender_id)
 
-    assert contract.status == ContractStatus.Finished    
+    assert contract.status == ContractStatus.Finished
+    assert tender.status == TenderStatus.Executing
 
+def test_accept_job(
+    service,
+    registered_users,    
+    opened_contracts,
+    reports_data
+):
+    gov: LocalAccount = registered_users(GOV)    
+    comp: LocalAccount = registered_users(GOOD_COMP)
+    guy: LocalAccount = registered_users(GUY)
+    contract: ContractGetFullDTO = opened_contracts(BEST_BID, MAIN_TENDER, GOV, GOOD_COMP)
+
+    ContractsManager.finance_contract(
+        service,
+        gov.address,
+        gov.key,
+        contract.tender_id,
+        contract.amount
+    )
+
+    ReportsManager.create_report(
+        service,
+        comp.address,
+        comp.key,
+        reports_data[REP_FINAL]
+    )
+
+    with pytest.raises(RuntimeError, match="You are not contractor of this contract"):
+        ContractsManager.hand_in_job(
+            service,
+            guy.address,
+            guy.key,
+            contract.tender_id
+        )    
+
+    ContractsManager.hand_in_job(
+        service,
+        comp.address,
+        comp.key,
+        contract.tender_id
+    )
+
+    ContractsManager.review_job(
+        service,
+        gov.address,
+        gov.key,
+        AcceptingModeDTO(
+            tender_id=contract.tender_id,
+            acceptance=False,
+            strict=False
+        ))
+
+    contract = ContractsManager.get_contract_full(service, contract.contract_id)
+    tender = TendersManager.get_tender_full(service, contract.tender_id)
+
+    assert contract.status == ContractStatus.Executing
+    assert tender.status == TenderStatus.Executing
+
+    ContractsManager.hand_in_job(
+        service,
+        comp.address,
+        comp.key,
+        contract.tender_id
+    )
     
+    contract = ContractsManager.get_contract_full(service, contract.contract_id)
+    tender = TendersManager.get_tender_full(service, contract.tender_id)
+
+    assert contract.status == ContractStatus.Finished
+    assert tender.status == TenderStatus.Executing
+
+    ContractsManager.review_job(
+        service,
+        gov.address,
+        gov.key,
+        AcceptingModeDTO(
+            tender_id=contract.tender_id,
+            acceptance=True,
+            strict=False
+        ))
+
+    with pytest.raises(RuntimeError, match="This tender is not executing"):
+        ContractsManager.review_job(
+            service,
+            gov.address,
+            gov.key,
+            AcceptingModeDTO(
+                tender_id=contract.tender_id,
+                acceptance=False,
+                strict=False
+            ))
+
+    contract = ContractsManager.get_contract_full(service, contract.contract_id)
+    tender = TendersManager.get_tender_full(service, contract.tender_id)
+
+    assert contract.status == ContractStatus.Completed
+    assert tender.status == TenderStatus.Completed
 

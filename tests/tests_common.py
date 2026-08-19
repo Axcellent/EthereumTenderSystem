@@ -20,7 +20,7 @@ from api.contracts import ContractsManager
 from api.reports import ReportsManager
 from api.reviews import ReviewsManager
 
-from test_data import existing_users, users_data, tenders_data
+from test_data import *
 
 @pytest.fixture
 def registered_users(
@@ -98,7 +98,7 @@ def submitted_bids(
             bid_data: Optional[BidCreateDTO] = None
             ) -> LocalAccount:
         user = registered_users(user_id)
-        tender = created_tenders(tender_id, user_id)
+        tender = created_tenders(tender_id, GOV)
 
         if use_default or bid_data is None:
             bid_data = bids_data[bid_no]
