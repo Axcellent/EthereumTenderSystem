@@ -1,4 +1,4 @@
-from ui.operations.base import (BlockchainOperation,
+from ui.operations import (BlockchainOperation,
                                 BlockchainUser,
                                 BlockchainService)
 

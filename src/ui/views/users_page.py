@@ -57,6 +57,15 @@ class UserPage(QWidget):
     def _init_ui(self):
         layout = QVBoxLayout(self)
 
+        self.key_in = QLineEdit()
+        self.key_in.setPlaceholderText("Введите свой приватный ключ")
+        self.save_key_btn = QPushButton("Сохранить ключ")
+        self.save_key_btn.clicked.connect(self._save_key)
+
+        layout.addWidget(self.key_in)
+        layout.addWidget(self.save_key_btn)
+
+
         self.info_group = QGroupBox("Информация о пользователе")
         info_layout = QVBoxLayout(self.info_group)
         self.user_info_label = QLabel("Нет данных")
@@ -78,6 +87,7 @@ class UserPage(QWidget):
 
         self.presenter.register_finished.connect(self._on_registration_finished)
         self.presenter.error.connect(self._on_error)
+        self.presenter._app_state.user_changed.connect(self._success_setted_user)
 
     def _on_register_clicked(self):
         dialog = RegistrationDialog(self)
@@ -95,3 +105,9 @@ class UserPage(QWidget):
 
     def _on_error(self, error_msg: str):
         QMessageBox.critical(self, "Ошибка", error_msg)
+
+    def _save_key(self):
+        self.presenter._app_state.setUser(self.key_in.text())    
+
+    def _success_setted_user(self):
+        QMessageBox.information(self, "Вход выполнен", f'Аккаунт сохранен на устройстве')

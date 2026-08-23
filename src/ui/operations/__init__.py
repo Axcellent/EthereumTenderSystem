@@ -16,7 +16,12 @@ class BlockchainUser():
     address: addr
     key: pkey
 
-class BlockchainOperation(ABC):
+class Operation(ABC):
+    @abstractmethod
+    def execute(self):
+        pass
+
+class BlockchainOperation(Operation):
     def __init__(
         self,
         service: BlockchainService,
@@ -25,7 +30,3 @@ class BlockchainOperation(ABC):
         self.service = service
         self.address = user.address
         self.key = user.key
-
-    @abstractmethod
-    def execute(self):
-        pass

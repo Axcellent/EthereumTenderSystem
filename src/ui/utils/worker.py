@@ -1,6 +1,6 @@
 from PyQt6.QtCore import pyqtSignal, pyqtSlot, QObject
 
-from ui.operations.base import BlockchainOperation
+from ui.operations import Operation, BlockchainOperation
 
 class BlockchainWorker(QObject):
     finished = pyqtSignal(object)
@@ -8,7 +8,7 @@ class BlockchainWorker(QObject):
 
     def __init__(
         self,
-        operation: BlockchainOperation
+        operation: Operation
     ):
         super().__init__()
         self.operation = operation
@@ -16,7 +16,7 @@ class BlockchainWorker(QObject):
 
     @pyqtSlot()
     def run(self):
-        try:
+        try:        
             res = self.operation.execute()
             self.finished.emit(res)
         except Exception as e:
