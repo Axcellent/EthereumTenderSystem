@@ -110,7 +110,7 @@ def test_tender_close(
     comp: LocalAccount = registered_users(COMP)
     tender: TenderGetFullDTO = created_tenders(MAIN_TENDER, GOV)
 
-    with pytest.raises(RuntimeError, match="Tender has to be in closed-bidding status"):
+    with pytest.raises(RuntimeError, match="Time for bidding is not over"):
         TendersService.close_tender(
             service,
             gov.address,
