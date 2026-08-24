@@ -1,113 +1,145 @@
-# views/user_page.py
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QLabel, QPushButton,
-                             QMessageBox, QDialog, QFormLayout, QLineEdit, QTextEdit,
-                             QDialogButtonBox)
+from PyQt6.QtWidgets import *
 from PyQt6.QtCore import pyqtSignal
 from ui.presenters.user_presenter import UsersPresenter
+from models.common import addr, pkey
 from models.users_dto import UserCreateDTO
 from pydantic import ValidationError
 
 class RegistrationDialog(QDialog):
-    """Диалог для ввода данных нового пользователя."""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Регистрация пользователя")
-        self.setMinimumWidth(400)
+
+        self.setWindowTitle("Регистрация в GTS")
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
-        self.title_edit = QLineEdit()
-        self.description_edit = QTextEdit()
-        self.description_edit.setMaximumHeight(80)
-        self.cities_edit = QLineEdit(placeholderText="Города через запятую")
-        self.phones_edit = QLineEdit(placeholderText="Телефоны через запятую")
-        self.emails_edit = QLineEdit(placeholderText="Email через запятую")
+        self.title_in = QLineEdit()
+        self.title_in.setPlaceholderText("Название Вашей огранизации")
+        form.addRow("Название", self.title_in)
 
-        form.addRow("Название организации:", self.title_edit)
-        form.addRow("Описание:", self.description_edit)
-        form.addRow("Города:", self.cities_edit)
-        form.addRow("Телефоны:", self.phones_edit)
-        form.addRow("Email:", self.emails_edit)
+        self.description_in = QTextEdit()
+        self.description_in.setPlaceholderText("Описание Вашей организации")
+        form.addRow("Описание", self.description_in)
+
+        self.cities_in = QLineEdit()
+        self.cities_in.setPlaceholderText("Города главных филиалов через запятую")
+        form.addRow("Города", self.cities_in)
+
+        self.telephones_in = QLineEdit()
+        self.telephones_in.setPlaceholderText("Контактные телефоны через запятую")
+        form.addRow("Телефоны", self.telephones_in)
+
+        self.emails_in = QLineEdit()
+        self.emails_in.setPlaceholderText("Корпоративные email через запятую")
+        form.addRow("Почты", self.emails_in)
+
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok |
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
 
         layout.addLayout(form)
+        layout.addWidget(self.buttons)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+    def get_data(self) -> UserCreateDTO:
+        return UserCreateDTO(
+            title=self.title_in.text(),
+            description=self.description_in.toPlainText(),
+            cities=self.cities_in.text().split(', '),
+            telephones=self.telephones_in.text().split(', '),
+            emails=self.emails_in.text().split(', '),
+        )
 
-    def get_data(self) -> dict:
-        """Возвращает словарь с данными формы."""
-        return {
-            'title': self.title_edit.text().strip(),
-            'description': self.description_edit.toPlainText().strip(),
-            'cities': [c.strip() for c in self.cities_edit.text().split(',') if c.strip()],
-            'telephones': [t.strip() for t in self.phones_edit.text().split(',') if t.strip()],
-            'emails': [e.strip() for e in self.emails_edit.text().split(',') if e.strip()],
-        }
 
-class UserPage(QWidget):
-    def __init__(self, presenter: UsersPresenter, parent=None):
+class AdminActionDialog(QDialog):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.presenter = presenter
-        self._init_ui()
-        self._connect_signals()
 
-    def _init_ui(self):
         layout = QVBoxLayout(self)
+        form = QFormLayout()
+
+        self.address_in = QLineEdit()
+        self.address_in.setPlaceholderText("Введите адрес пользователя GTS")
+        form.addRow("Пользователь", self.address_in)
 
         self.key_in = QLineEdit()
-        self.key_in.setPlaceholderText("Введите свой приватный ключ")
-        self.save_key_btn = QPushButton("Сохранить ключ")
+        self.key_in.setPlaceholderText("Введите модерационный ключ")
+        form.addRow("Код подтверждения", self.key_in)
+
+        layout.addWidget(form)
+
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok |
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        layout.addWidget(button_box)
+
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+
+
+class UserPage(QWidget):
+    def __init__(
+        self,
+        presenter: UsersPresenter,
+        parent=None
+    ):
+        super().__init__(parent)
+        self.presenter = presenter
+        self.user_loaded = False
+
+        layout = QVBoxLayout(self)
+
+        key_gb = QGroupBox("Идентификатор в сети")
+        key_gb_l = QVBoxLayout(key_gb)
+        key_field_l = QFormLayout()
+        key_actions_l = QHBoxLayout()
+        key_gb_l.addLayout(key_field_l)
+        key_gb_l.addLayout(key_actions_l)
+
+        self.key_in = QLineEdit()
+        self.key_in.setPlaceholderText("Введите ваш приватный ключ")
+        key_field_l.addRow("Приватный ключ", self.key_in)
+
+        self.save_key_btn = QPushButton("↑ Сохранить")
         self.save_key_btn.clicked.connect(self._save_key)
+        self.save_key_btn.setToolTip("Сохранить ключ в оперативной памяти")
+        self.register_btn = QPushButton("⁜ Регистрация")
+        self.register_btn.setToolTip("Зарегитстрироваться в системе по адресу из ключа")
+        self.register_btn.clicked.connect(self._register)
+        self.load_user_btn = QPushButton("↓ Авторизация")
+        self.load_user_btn.setToolTip("Получить из GTS данные о пользователе по адресу из ключа")
+        self.load_user_btn.clicked.connect(self._load_user)
+        key_actions_l.addWidget(self.save_key_btn)
+        key_actions_l.addWidget(self.register_btn)
+        key_actions_l.addWidget(self.load_user_btn)
 
-        layout.addWidget(self.key_in)
-        layout.addWidget(self.save_key_btn)
+        user_gb = QGroupBox("Профиль")
+        key_gb_l = QVBoxLayout(user_gb)
 
+        self.user_info_field = QWidget()
+        if self.user_loaded:
+            pass
+        else:
+            self.user_info_field = QLabel("Нет данных")
 
-        self.info_group = QGroupBox("Информация о пользователе")
-        info_layout = QVBoxLayout(self.info_group)
-        self.user_info_label = QLabel("Нет данных")
-        info_layout.addWidget(self.user_info_label)
-
-        buttons_layout = QVBoxLayout()
-        self.load_profile_button = QPushButton("Загрузить профиль")
-        self.reputation_button = QPushButton("Показать репутацию")
-        self.register_button = QPushButton("Регистрация нового пользователя")
-        buttons_layout.addWidget(self.load_profile_button)
-        buttons_layout.addWidget(self.reputation_button)
-        buttons_layout.addWidget(self.register_button)
-
-        layout.addWidget(self.info_group)
-        layout.addLayout(buttons_layout)
-
-    def _connect_signals(self):
-        self.register_button.clicked.connect(self._on_register_clicked)
-
-        self.presenter.register_finished.connect(self._on_registration_finished)
-        self.presenter.error.connect(self._on_error)
-        self.presenter._app_state.user_changed.connect(self._success_setted_user)
-
-    def _on_register_clicked(self):
-        dialog = RegistrationDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            data = dialog.get_data()
-            try:
-                user_dto = UserCreateDTO(**data)
-            except ValidationError as e:
-                QMessageBox.critical(self, "Ошибка данных", str(e))
-                return
-            self.presenter.register(user_dto)
-
-    def _on_registration_finished(self, tx_receipt):
-        QMessageBox.information(self, "Успех", f"Пользователь зарегистрирован. Tx: {tx_receipt.transactionHash.hex()}")
-
-    def _on_error(self, error_msg: str):
-        QMessageBox.critical(self, "Ошибка", error_msg)
+        layout.addWidget(key_gb, stretch=1)
+        layout.addWidget(user_gb, stretch=2)
 
     def _save_key(self):
-        self.presenter._app_state.setUser(self.key_in.text())    
+        pass
 
-    def _success_setted_user(self):
-        QMessageBox.information(self, "Вход выполнен", f'Аккаунт сохранен на устройстве')
+    def _load_user(self):
+        self.user_loaded = True
+
+    def _register(self):
+        dialog = RegistrationDialog()
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            print(dialog.get_data().model_dump_json())            
+        else:
+            print("Пользователь отменил")

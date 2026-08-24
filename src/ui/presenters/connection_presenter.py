@@ -14,22 +14,18 @@ class ConnectionPresenter(BasePresenter):
         app_state: AppState,
         parent=None
     ):
-        super().__init__(parent)
-        self.app_state = app_state
+        super().__init__(app_state, parent)
 
     def connect(
         self,
         url: str,
         contract: str,        
     ):
-        try:
-            self._start_background_task(
-                ConnectOperation(
-                    self.app_state,
-                    url,
-                    contract,
-                ), 
-                self.app_state.service_connected
-            )
-        except Exception as e:
-            self.error_occured.emit(str(e))
+        self._start_background_task(
+            ConnectOperation(
+                self.app_state,
+                url,
+                contract,
+            ), 
+            self.app_state.service_connected
+        )

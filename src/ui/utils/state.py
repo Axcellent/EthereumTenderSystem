@@ -8,6 +8,8 @@ from services import BlockchainService
 from eth_account import Account
 
 class AppState(QObject):
+    task_started = pyqtSignal(str)
+    task_finished = pyqtSignal()
     user_changed = pyqtSignal(object)
     service_connected = pyqtSignal()
 
@@ -16,6 +18,7 @@ class AppState(QObject):
 
         self._user: BlockchainUser | None = None
         self._service: BlockchainService | None = None
+        self._can_create_tasks: bool = True
 
     @property
     def service(self) -> BlockchainService:
@@ -29,6 +32,18 @@ class AppState(QObject):
         self._service = BlockchainService(url, contract, 'src/abi.json')    
         self.service_connected.emit()     
 
+    def block(self, msg: str) -> bool:
+        if self._can_create_tasks == True:
+            self._can_create_tasks: bool = False
+            self.task_started.emit(msg)
+            return True
+        return False
+
+    def release(self):
+        if self._can_create_tasks == False:
+            self._can_create_tasks: bool = True
+            self.task_finished.emit()
+    
     @property
     def user(self) -> BlockchainUser:
         return self._user

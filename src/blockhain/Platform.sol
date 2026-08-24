@@ -302,6 +302,33 @@ contract GovernmentTenderSystem is
     }
 
 
+    /**
+     * @dev Получение нескольких тендеров (пагинация на ноде)
+     * @param _offset       - uint256       - Смещение с начала
+     * @param _limit        - uint256       - Количество тендеров для отображения
+     */
+    function getTenders
+    (
+        uint256 _offset, 
+        uint256 _limit
+    ) external view returns (Tender[] memory)
+    {
+        require(_offset < tenderCounter, "Offset too large");
+        
+        uint256 end = _offset + _limit;
+        if (end > tenderCounter)
+        {
+            end = tenderCounter;
+        }
+
+        uint256 count = end - _offset;
+        Tender[] memory result = new Tender[](count);
+        for (uint256 i = 0; i < count; i++)
+        {
+            result[i] = tenders[_offset + i + 1];
+        }
+        return result;
+    }
 
 
     /**

@@ -24,5 +24,20 @@ class MainApp(QMainWindow):
         central.addTab(connection_page, "Подключение")
         central.addTab(users_page, "Профиль")
 
-        bar = self.statusBar().addWidget(QLabel("Не подключено"))
-        self.setStatusBar(bar)
+        self.connection_bar = QLabel("Не подключено")
+        self.task_bar = QLabel("Нет задач")
+        self.app_state.service_connected.connect(self._change_connection_bar)
+        self.app_state.task_started.connect(self._change_task_bar)
+        self.app_state.task_finished.connect(self._clear_task_bar)
+
+        self.statusBar().addWidget(self.connection_bar)
+        self.statusBar().addWidget(self.task_bar)
+
+    def _change_connection_bar(self):
+        self.connection_bar.setText(self.app_state.service.chain_id)
+
+    def _change_task_bar(self, msg: str):
+        self.task_bar.setText(msg)
+
+    def _clear_task_bar(self):
+        self.task_bar.setText("Нет задач")

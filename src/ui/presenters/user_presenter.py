@@ -20,15 +20,13 @@ from models.users_dto import UserCreateDTO
 class UsersPresenter(BasePresenter):
     register_finished = pyqtSignal(object)
     get_user_finished = pyqtSignal()
-    error = pyqtSignal(str)
 
     def __init__(
         self,
-        app_state: AppState
+        app_state: AppState,
+        parent=None
     ):
-        super().__init__()
-        self._app_state = app_state
-        self._tasks = []
+        super().__init__(app_state, parent)
 
     def register(
         self,        
@@ -42,3 +40,15 @@ class UsersPresenter(BasePresenter):
             ),
             self.register_finished
         )
+
+    def get_user_data(self):
+        pass
+
+    def ban_user(self):
+        pass
+
+    def delete_user(self):
+        pass
+
+    def unban_user(self):
+        pass
