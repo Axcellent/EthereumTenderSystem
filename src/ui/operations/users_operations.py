@@ -53,7 +53,7 @@ class BanUserOperation(BlockchainOperation):
         comment: str
     ):
         super().__init__(service, user)
-        self.address: addr = address
+        self.other_address: addr = address
         self.comment: str = comment
 
     def execute(self):
@@ -61,7 +61,7 @@ class BanUserOperation(BlockchainOperation):
             self.service,
             self.address,
             self.key,
-            self.address,
+            self.other_address,
             self.comment
         )
 
@@ -74,7 +74,7 @@ class UnbanUserOperation(BlockchainOperation):
         comment: str
     ):
         super().__init__(service, user)
-        self.address: addr = address
+        self.other_address: addr = address
         self.comment: str = comment
 
     def execute(self):
@@ -82,7 +82,7 @@ class UnbanUserOperation(BlockchainOperation):
             self.service,
             self.address,
             self.key,
-            self.address,
+            self.other_address,
             self.comment
         )
 
@@ -95,7 +95,7 @@ class DeleteUserOperation(BlockchainOperation):
         comment: str
     ):
         super().__init__(service, user)
-        self.address: addr = address
+        self.other_address: addr = address
         self.comment: str = comment
 
     def execute(self):
@@ -103,6 +103,6 @@ class DeleteUserOperation(BlockchainOperation):
             self.service,
             self.address,
             self.key,
-            self.address,
+            self.other_address,
             self.comment
         )

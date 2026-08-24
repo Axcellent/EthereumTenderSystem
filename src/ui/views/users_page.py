@@ -59,6 +59,9 @@ class AdminActionDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.setWindowTitle("Управление пользователями")
+        self.setGeometry(150,150,600,400)
+
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
@@ -66,9 +69,9 @@ class AdminActionDialog(QDialog):
         self.address_in.setPlaceholderText("Введите адрес пользователя GTS")
         form.addRow("Пользователь", self.address_in)
 
-        self.key_in = QLineEdit()
-        self.key_in.setPlaceholderText("Введите причину")
-        form.addRow("Комментарий", self.key_in)
+        self.reason_in = QLineEdit()
+        self.reason_in.setPlaceholderText("Введите причину")
+        form.addRow("Комментарий", self.reason_in)
 
         self.key_in = QLineEdit()
         self.key_in.setPlaceholderText("Введите модерационный ключ")
@@ -86,8 +89,8 @@ class AdminActionDialog(QDialog):
         button_box.rejected.connect(self.reject)
 
     def get_data(self) -> addr:
-        if self.key_in == "12345":
-            return self.address_in
+        if self.key_in.text() == "12345":
+            return (self.address_in.text(), self.reason_in.text())
         else:
             raise RuntimeError("Wrong passcode")
 
