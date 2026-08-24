@@ -21,5 +21,3 @@ class BlockchainWorker(QObject):
             self.finished.emit(res)
         except Exception as e:
             self.error.emit(e)
-            # GOV
-            # 80000000000

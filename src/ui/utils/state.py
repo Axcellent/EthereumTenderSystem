@@ -29,8 +29,7 @@ class AppState(QObject):
         url: str,
         contract: str,        
     ):
-        self._service = BlockchainService(url, contract, 'src/abi.json')    
-        self.service_connected.emit()     
+        self._service = BlockchainService(url, contract, 'src/abi.json')            
 
     def block(self, msg: str) -> bool:
         if self._can_create_tasks == True:

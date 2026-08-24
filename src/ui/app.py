@@ -34,7 +34,7 @@ class MainApp(QMainWindow):
         self.statusBar().addWidget(self.task_bar)
 
     def _change_connection_bar(self):
-        self.connection_bar.setText(self.app_state.service.chain_id)
+        self.connection_bar.setText(str(self.app_state.service.chain_id))
 
     def _change_task_bar(self, msg: str):
         self.task_bar.setText(msg)

@@ -18,6 +18,8 @@ from ui.utils.state import AppState
 
 from models.users_dto import UserCreateDTO
 
+from functools import wraps
+
 class BasePresenter(QObject):    
     error_occured = pyqtSignal(str)
 
@@ -31,13 +33,22 @@ class BasePresenter(QObject):
         self.workers: list[BlockchainWorker] = []
         self.app_state = app_state
 
+    @staticmethod
+    def chain_operation(func):
+        @wraps(func)
+        def _check(self: BasePresenter, *args, **kwargs):
+            if self.app_state.user is None:
+                self._on_error("Пользователь неизвестен, сохраните свой приватный ключ")
+            else:
+                return func(self, *args, **kwargs)
+        return _check
 
 
     def _start_background_task(
         self,
         operation: Operation,
         success_signal
-    ):
+    ):      
         if self.app_state.block(str(type(operation))):
             thread = QThread()
             task = BlockchainWorker(operation)

@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import pyqtSignal
 from ui.presenters.user_presenter import UsersPresenter
 from models.common import addr, pkey
-from models.users_dto import UserCreateDTO
+from models.users_dto import *
 from pydantic import ValidationError
 
 class RegistrationDialog(QDialog):
@@ -10,6 +10,7 @@ class RegistrationDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Регистрация в GTS")
+        self.setParent(parent)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -66,10 +67,14 @@ class AdminActionDialog(QDialog):
         form.addRow("Пользователь", self.address_in)
 
         self.key_in = QLineEdit()
+        self.key_in.setPlaceholderText("Введите причину")
+        form.addRow("Комментарий", self.key_in)
+
+        self.key_in = QLineEdit()
         self.key_in.setPlaceholderText("Введите модерационный ключ")
         form.addRow("Код подтверждения", self.key_in)
 
-        layout.addWidget(form)
+        layout.addLayout(form)
 
         button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok |
@@ -79,6 +84,13 @@ class AdminActionDialog(QDialog):
 
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
+
+    def get_data(self) -> addr:
+        if self.key_in == "12345":
+            return self.address_in
+        else:
+            raise RuntimeError("Wrong passcode")
+
 
 
 class UserPage(QWidget):
@@ -103,6 +115,24 @@ class UserPage(QWidget):
         self.key_in = QLineEdit()
         self.key_in.setPlaceholderText("Введите ваш приватный ключ")
         key_field_l.addRow("Приватный ключ", self.key_in)
+        self.admin_cb = QCheckBox("Показывать функции модераторов")
+        self.admin_cb.checkStateChanged.connect(self._show_admin_funcs)
+        key_gb_l.addWidget(self.admin_cb)
+        admin_l = QHBoxLayout()
+        key_gb_l.addLayout(admin_l)
+        self.ban_btn = QPushButton("× Заблокировать")
+        self.ban_btn.clicked.connect(self._ban_user)
+        self.ban_btn.setToolTip("Заблокировать пользователя по адресу (только админ)")
+        admin_l.addWidget(self.ban_btn)
+        self.delete_btn = QPushButton("※ Удаление")
+        self.delete_btn.clicked.connect(self._delete_user)
+        self.delete_btn.setToolTip("Удалить пользователя по адресу (только админ)")
+        admin_l.addWidget(self.delete_btn)
+        self.unban_btn = QPushButton("⁙ Разблокировать")
+        self.unban_btn.clicked.connect(self._unban_user)
+        self.unban_btn.setToolTip("Разблокировать пользователя по адресу (только админ)")
+        admin_l.addWidget(self.unban_btn)
+        
 
         self.save_key_btn = QPushButton("↑ Сохранить")
         self.save_key_btn.clicked.connect(self._save_key)
@@ -117,22 +147,64 @@ class UserPage(QWidget):
         key_actions_l.addWidget(self.register_btn)
         key_actions_l.addWidget(self.load_user_btn)
 
-        user_gb = QGroupBox("Профиль")
-        key_gb_l = QVBoxLayout(user_gb)
+        self.user_gb = QGroupBox("Профиль")
+        user_l = QGridLayout(self.user_gb)
 
-        self.user_info_field = QWidget()
-        if self.user_loaded:
-            pass
-        else:
-            self.user_info_field = QLabel("Нет данных")
+        self.title_lbl = QLabel("не указано")
+        self.title_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.description_lbl = QLabel("не указано")
+        self.description_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.cities_lbl = QLabel("не указано")
+        self.cities_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.telephones_lbl = QLabel("не указано")
+        self.telephones_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.emails_lbl = QLabel("не указано")
+        self.emails_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        user_l.addWidget(QLabel("НАЗВАНИЕ"), 0, 0)
+        user_l.addWidget(self.title_lbl, 0, 1)
+        user_l.addWidget(QLabel("ОПИСАНИЕ"), 1, 0)
+        user_l.addWidget(self.description_lbl, 1, 1)
+        user_l.addWidget(QLabel("ФИЛИАЛЫ"), 2, 0)
+        user_l.addWidget(self.cities_lbl, 2, 1)
+        user_l.addWidget(QLabel("ТЕЛЕФОНЫ"), 3, 0)
+        user_l.addWidget(self.telephones_lbl, 3, 1)
+        user_l.addWidget(QLabel("ПОЧТЫ"), 4, 0)
+        user_l.addWidget(self.emails_lbl, 4, 1)
+
+        user_l.setColumnStretch(0, 1)
+        user_l.setColumnStretch(1, 3)
 
         layout.addWidget(key_gb, stretch=1)
-        layout.addWidget(user_gb, stretch=2)
+        layout.addWidget(self.user_gb, stretch=2)
+
+        self.presenter.get_user_finished.connect(self._load_user_finished)
+        self.presenter.register_finished.connect(self._register_finished)
+        self.presenter.error_occured.connect(self._on_error)
+        self.presenter.app_state.user_changed.connect(self._key_save_finished)
+        self.presenter.admin_action_finished.connect(self._admin_op_finished)
 
     def _save_key(self):
-        pass
+        try:
+            self.presenter.app_state.setUser(self.key_in.text())
+        except Exception as e:
+            self._on_error(str(e))
+
+    def _key_save_finished(self):
+        QMessageBox.information(self, "Аккаунт сети", "Ваш приватный ключ был успешно сохранен в оперативной памяти устройства")
 
     def _load_user(self):
+        self.presenter.get_user_data()
+
+    def _load_user_finished(self, data: UserGetFullDTO):
+        print("We have got user's data from blockchain")
+        print(data)
+
+        self.title_lbl.setText(f"{data.title}")
+        self.description_lbl.setText(f"{data.description}")
+        self.cities_lbl.setText(f"{', '.join(data.cities)}")
+        self.telephones_lbl.setText(f"{', '.join(data.telephones)}")
+        self.emails_lbl.setText(f"{', '.join(data.emails)}")
         self.user_loaded = True
 
     def _register(self):
@@ -140,6 +212,61 @@ class UserPage(QWidget):
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted:
-            print(dialog.get_data().model_dump_json())            
+            try:
+                data = dialog.get_data()
+                self.presenter.register(data)
+            except Exception as e:
+                self._on_error(str(e))       
+
+    def _register_finished(self) :
+        QMessageBox.information(self, "Успешная регистрация", "Вы успешно зарегистирировали свою организацию в GTS!")
+
+    def _on_error(self, msg: str):
+        QMessageBox.critical(self, "Ошибка профилей", msg)
+
+    def _show_admin_funcs(self):
+        cur = self.admin_cb.isChecked()
+        if cur:
+            self.ban_btn.show()
+            self.unban_btn.show()
+            self.delete_btn.show()
         else:
-            print("Пользователь отменил")
+            self.ban_btn.hide()
+            self.unban_btn.hide()
+            self.delete_btn.hide()
+
+    def _ban_user(self):
+        dialog = AdminActionDialog()
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            try:
+                address, reason = dialog.get_data()
+                self.presenter.ban_user(address, reason)
+            except Exception as e:
+                self._on_error(str(e))
+
+    def _delete_user(self):
+        dialog = AdminActionDialog()
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            try:
+                address, reason = dialog.get_data()
+                self.presenter.delete_user(address, reason)
+            except Exception as e:
+                self._on_error(str(e))
+
+    def _unban_user(self):
+        dialog = AdminActionDialog()
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            try:
+                address, reason = dialog.get_data()
+                self.presenter.unban_user(address, reason)
+            except Exception as e:
+                self._on_error(str(e))
+
+    def _admin_op_finished(self):
+        QMessageBox.information(self, "Успешное действие", "Изменение в GTS внесено")
