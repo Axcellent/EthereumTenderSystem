@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from models.common import (string,
                            text,
@@ -58,6 +58,13 @@ class UserGetFullDTO(BaseModel):
     cities: list[string]
     telephones: list[string]
     emails: list[string]
+
+    @field_validator("title", mode="before")
+    def check_for_existance(cls, val):
+        if val == "":
+            raise RuntimeError("User does not exist")
+        return val
+        
 
     @field_validator("telephones", mode="before")
     def validate_telephones(cls, values: text):

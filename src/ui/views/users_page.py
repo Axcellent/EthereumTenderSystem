@@ -135,6 +135,7 @@ class UserPage(QWidget):
         self.unban_btn.clicked.connect(self._unban_user)
         self.unban_btn.setToolTip("Разблокировать пользователя по адресу (только админ)")
         admin_l.addWidget(self.unban_btn)
+        self._show_admin_funcs()
         
 
         self.save_key_btn = QPushButton("↑ Сохранить")
@@ -150,6 +151,15 @@ class UserPage(QWidget):
         key_actions_l.addWidget(self.register_btn)
         key_actions_l.addWidget(self.load_user_btn)
 
+        backup_l = QHBoxLayout()
+        key_gb_l.addLayout(backup_l)
+        self._backup_btn = QPushButton("CREATE BACKUP")
+        self._backup_btn.clicked.connect(self._CREATE_BACKUP)
+        self._goto_btn = QPushButton("GOTO BACKUP")
+        self._goto_btn.clicked.connect(self._GOTO_BACKUP)
+        backup_l.addWidget(self._goto_btn)
+        backup_l.addWidget(self._backup_btn)
+
         self.user_gb = QGroupBox("Профиль")
         user_l = QGridLayout(self.user_gb)
 
@@ -157,6 +167,7 @@ class UserPage(QWidget):
         self.title_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.description_lbl = QLabel("не указано")
         self.description_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.description_lbl.setWordWrap(True)
         self.cities_lbl = QLabel("не указано")
         self.cities_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.telephones_lbl = QLabel("не указано")
@@ -187,6 +198,14 @@ class UserPage(QWidget):
         self.presenter.app_state.user_changed.connect(self._key_save_finished)
         self.presenter.admin_action_finished.connect(self._admin_op_finished)
 
+    def _CREATE_BACKUP(self):        
+        print(self.presenter.app_state.service.web3.provider.make_request('evm_snapshot', [])['result'])
+
+    def _GOTO_BACKUP(self):
+        self.presenter.app_state.service.web3.provider.make_request('evm_revert', [1])
+        print('backuped to 0x1')
+
+
     def _save_key(self):
         try:
             self.presenter.app_state.setUser(self.key_in.text())
@@ -199,8 +218,7 @@ class UserPage(QWidget):
     def _load_user(self):
         self.presenter.get_user_data()
 
-    def _load_user_finished(self, data: UserGetFullDTO):
-        print("We have got user's data from blockchain")
+    def _load_user_finished(self, data: UserGetFullDTO):        
         print(data)
 
         self.title_lbl.setText(f"{data.title}")

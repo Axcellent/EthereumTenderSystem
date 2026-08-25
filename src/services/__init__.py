@@ -36,8 +36,10 @@ class BlockchainService:
             abi=contract_abi
         )
 
-        if not self.contract:
-            raise ConnectionError("Unable to find contract")
+        try:
+            self.view("tenderCounter", [])
+        except:
+            raise ConnectionError("Unable to find contract on provided address!")        
 
     def send_tx(
         self,
