@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import *
 from ui.utils.state import AppState, BlockchainService, BlockchainUser
 from ui.views.users_page import UserPage, UsersPresenter
 from ui.views.connection_page import ConnectionPage, ConnectionPresenter
-from ui.views.main_page import MainPage, UsersPresenter
+from ui.views.main_page import MainPage, TendersPresenter
 from ui.views.my_page import MyPage, UsersPresenter
 
 class MainApp(QMainWindow):
@@ -12,6 +12,7 @@ class MainApp(QMainWindow):
         self.app_state = AppState()
         users_presenter = UsersPresenter(self.app_state)
         connection_presenter = ConnectionPresenter(self.app_state)
+        tenders_presenter = TendersPresenter(self.app_state)
 
         ### Настраиваем главное окно
         self.setWindowTitle("First App")
@@ -24,7 +25,7 @@ class MainApp(QMainWindow):
             # Создаем страницы
         users_page = UserPage(users_presenter, central)
         connection_page = ConnectionPage(connection_presenter, central)
-        main_page = MainPage(users_presenter, central)
+        main_page = MainPage(tenders_presenter, central)
         my_page = MyPage(users_presenter, central)
             # Добавляем страницы
         central.addTab(connection_page, "Подключение")

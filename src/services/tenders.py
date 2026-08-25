@@ -99,6 +99,7 @@ class TendersService():
         page: uint,
         count: uint
     ) -> list[TenderGetShortDTO]:
+        print('get_tenders_short')   
         tenders_data = service.view(GET_TENDERS, [page, count])
         
         result = []
@@ -109,6 +110,7 @@ class TendersService():
                 budget=tender[3],
                 deadline=tender[4],
             ))
+        print(result)
         return result
 
     @staticmethod

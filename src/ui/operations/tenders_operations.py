@@ -69,12 +69,14 @@ class LoadTendersOperation(BlockchainOperation):
         user: BlockchainUser,
         page: uint,
         count: uint
-    ):        
+    ):     
+        print('LoadTendersOperation __init__')   
         super().__init__(service, user)
         self.page = page
         self.count = count
 
     def execute(self) -> list[TenderGetShortDTO]:
+        print('LoadTendersOperation execute')   
         return TendersService.get_tenders_short(
             self.service,
             self.page,

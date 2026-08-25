@@ -1,39 +1,46 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import pyqtSignal
-from ui.presenters.tenders_presenter import TendersPresenter
+from PyQt6.QtCore import pyqtSignal, QDate
+from ui.presenters.tenders_presenter import *
 from models.common import addr, pkey
 from models.users_dto import *
 from pydantic import ValidationError
 
-class RegistrationDialog(QDialog):
+class TenderCreatingDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle("Регистрация в GTS")
+        self.setWindowTitle("Создание тендера")
         self.setParent(parent)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
         self.title_in = QLineEdit()
-        self.title_in.setPlaceholderText("Название Вашей огранизации")
+        self.title_in.setPlaceholderText("Название тендера")
         form.addRow("Название", self.title_in)
 
         self.description_in = QTextEdit()
-        self.description_in.setPlaceholderText("Описание Вашей организации")
+        self.description_in.setPlaceholderText("Полное описание тендера со ссылками на необходимые материалы")
         form.addRow("Описание", self.description_in)
 
-        self.cities_in = QLineEdit()
-        self.cities_in.setPlaceholderText("Города главных филиалов через запятую")
-        form.addRow("Города", self.cities_in)
+        self.budget_in = QSpinBox()
+        self.budget_in.setRange(0, 2_000_000_000)
+        self.budget_in.setSingleStep(1)
+        self.budget_in.setSuffix(" wei")
+        self.budget_in.setToolTip("Бюджет на ваш заказ в wei")
+        form.addRow("Бюджет", self.budget_in)
 
-        self.telephones_in = QLineEdit()
-        self.telephones_in.setPlaceholderText("Контактные телефоны через запятую")
-        form.addRow("Телефоны", self.telephones_in)
+        self.deadline_in = QDateEdit()
+        self.deadline_in.setCalendarPopup(True)
+        self.deadline_in.setDisplayFormat("dd.MM.yyyy")
+        self.deadline_in.setDate(QDate.currentDate().addDays(14))
+        form.addRow("Дедлайн выполнения тендера", self.deadline_in)
 
-        self.emails_in = QLineEdit()
-        self.emails_in.setPlaceholderText("Корпоративные email через запятую")
-        form.addRow("Почты", self.emails_in)
+        self.bidding_deadline_in = QDateEdit()
+        self.bidding_deadline_in.setCalendarPopup(True)
+        self.bidding_deadline_in.setDisplayFormat("dd.MM.yyyy")
+        self.bidding_deadline_in.setDate(QDate.currentDate().addDays(1))
+        form.addRow("Дедлайн подачи заявок на тендер", self.bidding_deadline_in)
 
         self.buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok |
@@ -44,56 +51,17 @@ class RegistrationDialog(QDialog):
 
         layout.addLayout(form)
         layout.addWidget(self.buttons)
+        
 
-    def get_data(self) -> UserCreateDTO:
-        return UserCreateDTO(
+    def get_data(self):
+        return TenderCreateDTO(
             title=self.title_in.text(),
             description=self.description_in.toPlainText(),
-            cities=self.cities_in.text().split(', '),
-            telephones=self.telephones_in.text().split(', '),
-            emails=self.emails_in.text().split(', '),
+            budget=self.budget_in.value(),
+            deadline=datetime.datetime.combine(self.deadline_in.date().toPyDate(), datetime.time.min),
+            bidding_deadline=datetime.datetime.combine(self.bidding_deadline_in.date().toPyDate(), datetime.time.min),
+            parent_id=0
         )
-
-
-class AdminActionDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.setWindowTitle("Управление пользователями")
-        self.setGeometry(150,150,600,400)
-
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
-
-        self.address_in = QLineEdit()
-        self.address_in.setPlaceholderText("Введите адрес пользователя GTS")
-        form.addRow("Пользователь", self.address_in)
-
-        self.reason_in = QLineEdit()
-        self.reason_in.setPlaceholderText("Введите причину")
-        form.addRow("Комментарий", self.reason_in)
-
-        self.key_in = QLineEdit()
-        self.key_in.setPlaceholderText("Введите модерационный ключ")
-        form.addRow("Код подтверждения", self.key_in)
-
-        layout.addLayout(form)
-
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok |
-            QDialogButtonBox.StandardButton.Cancel
-        )
-        layout.addWidget(button_box)
-
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-
-    def get_data(self) -> addr:
-        if self.key_in.text() == "12345":
-            return (self.address_in.text(), self.reason_in.text())
-        else:
-            raise RuntimeError("Wrong passcode")
-
 
 
 class MainPage(QWidget):
@@ -111,16 +79,91 @@ class MainPage(QWidget):
 
         self.stacked = QStackedWidget()
         layout.addWidget(self.stacked)
+
+        tenders_gb = QGroupBox("Тендеры")
+        self.stacked.addWidget(tenders_gb)
+
+        tenders_l = QVBoxLayout(tenders_gb)
+        tenders_btns_l = QHBoxLayout()
+        tenders_l.addLayout(tenders_btns_l)
+        tenders_list_l = QVBoxLayout()
+        tenders_l.addLayout(tenders_list_l)
+
+        self.load_tenders_btn = QPushButton("Загрузить")
+        tenders_btns_l.addWidget(self.load_tenders_btn)
+        self.tenders_page_in = QSpinBox()
+        self.tenders_page_in.setRange(0,1_000_000_000)
+        self.tenders_page_in.setPrefix("Страница №")
+        tenders_btns_l.addWidget(self.tenders_page_in)
+        self.tenders_cnt_in = QSpinBox()
+        self.tenders_cnt_in.setRange(0,100)        
+        self.tenders_cnt_in.setSuffix(" штук")
+        tenders_btns_l.addWidget(self.tenders_cnt_in)
+
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(5)
+        self.table.setRowCount(10)
+        self.table.setHorizontalHeaderLabels(["Заказчик", "Название", "Бюджет", "Дедлайн", "Статус"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setSortingEnabled(True)
+
+        tenders_list_l.addWidget(self.table)
+        create_tender_btn = QPushButton("Создать")
+        create_tender_btn.clicked.connect(self._open_creation_dialog)
+        tenders_list_l.addWidget(create_tender_btn)    
+        tenders_status_lbl = QLabel("А тут доп инфа")
+        tenders_list_l.addWidget(tenders_status_lbl)
+
+        self.table.setItem(0, 0, QTableWidgetItem("ABOBA"))
+        self.table.setItem(2, 2, QTableWidgetItem("BEBA"))
+
         self.page1 = QLabel("Это страница 1")
         self.stacked.addWidget(self.page1)
         self.page2 = QLabel("Это страница 2")    
         self.stacked.addWidget(self.page2)
 
-        self.btn1 = QPushButton("Тендеры")
+        self.btn1 = QPushButton(" < ")
         btns_l.addWidget(self.btn1)
-        self.btn1.clicked.connect(lambda: self.stacked.setCurrentIndex(0))
-        self.btn2 = QPushButton("Показать страницу 2")
+        self.btn1.clicked.connect(lambda: self.stacked.setCurrentIndex(max(0,self.stacked.currentIndex() - 1)))
+        self.btn2 = QPushButton(" > ")
         btns_l.addWidget(self.btn2)
-        self.btn2.clicked.connect(lambda: self.stacked.setCurrentIndex(1))
+        self.btn2.clicked.connect(lambda: self.stacked.setCurrentIndex(min(self.stacked.currentIndex() + 1, 2)))
+
+        self.presenter.error_occured.connect(self._on_error)
+        self.load_tenders_btn.clicked.connect(self._load_tender)
+        self.presenter.get_tenders_finished.connect(self._load_tender_finished)
+
+    def _open_creation_dialog(self):
+        dialog = TenderCreatingDialog(self)
+        res = dialog.exec()
+
+        if res == QDialog.DialogCode.Accepted:
+            try:
+                data = dialog.get_data()
+                self.presenter.create_tender(data)
+            except Exception as e:
+                self._on_error(str(e))
+
+    def _load_tender(self):        
+        self.presenter.get_tenders(self.tenders_page_in.value(),self.tenders_cnt_in.value())  
+
+    def _load_tender_finished(self, tender_data: list[TenderGetFullDTO]):
+        print(tender_data)
+        i,j=0,0
+        self.table.setRowCount(len(tender_data))
+        for t in tender_data:
+            j = 0
+            for f, v in t.model_dump().items():
+                try:
+                    self.table.setItem(i,j,QTableWidgetItem(str(v)))
+                except:
+                    self.table.setItem(i,j,QTableWidgetItem("as"))
+                j += 1
+            i += 1
+
+    def _on_error(self, msg: str):
+        QMessageBox.critical(self, "Ошибка", msg)
 
 

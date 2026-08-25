@@ -30,7 +30,7 @@ class ConnectionPage(QWidget):
         self.contract_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.contract_lbl.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self.contract_in = QLineEdit(parent=self.connection_box)
-        self.contract_in.setText("0x5A2b41B9e49F7e79fA07dD2F75534a682830AD81")
+        self.contract_in.setText("0x5d330455cb467dbFCe177F2C2b79F6940187901C")
         self.contract_in.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.connect_btn = QPushButton("Подключиться",parent=self.connection_box)
