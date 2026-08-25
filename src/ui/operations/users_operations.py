@@ -27,8 +27,7 @@ class RegisterUserOperation(BlockchainOperation):
             self.data
         )
 
-
-class GetUserOperation(BlockchainOperation):
+class LoadUserOperation(BlockchainOperation):
     def __init__(
         self,
         service: BlockchainService,

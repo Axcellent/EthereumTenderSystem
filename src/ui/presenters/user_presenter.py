@@ -49,7 +49,7 @@ class UsersPresenter(BasePresenter):
         address=None
     ):    
         self._start_background_task(
-            GetUserOperation(
+            LoadUserOperation(
                 self.app_state.service,
                 self.app_state.user,
                 address

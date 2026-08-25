@@ -47,7 +47,7 @@ class TendersService():
         address_from: addr,
         key: pkey,
         tender_id: uint
-    ) -> bool:
+    ) -> TxReceipt:
         return service.send_tx(
             address_from,
             key,
@@ -99,9 +99,17 @@ class TendersService():
         page: uint,
         count: uint
     ) -> list[TenderGetShortDTO]:
-        tenders = service.view(GET_TENDERS, [page, count])
-
-        return TendersService.get_short_tenders_by_ids(service, tenders)
+        tenders_data = service.view(GET_TENDERS, [page, count])
+        
+        result = []
+        for tender in tenders_data:
+            result.append(TenderGetShortDTO(
+                creator=tender[0],
+                title=tender[1],
+                budget=tender[3],
+                deadline=tender[4],
+            ))
+        return result
 
     @staticmethod
     def get_user_tenders(
