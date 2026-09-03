@@ -12,6 +12,7 @@ class AppState(QObject):
     task_finished = pyqtSignal()
     user_changed = pyqtSignal(object)
     service_connected = pyqtSignal()
+    tender_changed = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -20,11 +21,18 @@ class AppState(QObject):
         self._service: BlockchainService | None = None
         self._can_create_tasks: bool = True
 
+        self.tender_id: int | None = None
+
+    def set_tender_id(self, _tender_id: int):
+        self.tender_id = _tender_id
+
+        self.tender_changed.emit(self.tender_id)
+
     @property
     def service(self) -> BlockchainService:
         return self._service
     
-    def setService(
+    def set_service(
         self,        
         url: str,
         contract: str,        
@@ -47,7 +55,7 @@ class AppState(QObject):
     def user(self) -> BlockchainUser:
         return self._user
     
-    def setUser(self, key: str):
+    def set_user(self, key: str):
         ac = Account.from_key(key)
 
         self._user = BlockchainUser(ac.address, ac.key)

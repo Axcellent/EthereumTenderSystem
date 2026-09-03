@@ -20,7 +20,7 @@ from models.tenders_dto import *
 
 class TendersPresenter(BasePresenter):    
     create_tender_finished = pyqtSignal(object)      # TxReceipt
-    close_tender_finished = pyqtSignal(bool)         # bool
+    close_tender_finished = pyqtSignal(object)         # bool
     revert_tender_finished = pyqtSignal(object)      # TxReceipt
     get_tenders_finished = pyqtSignal(object)          # list[TenderGetShortDTO]
     get_user_tenders_finished = pyqtSignal(list)     # list[TenderGetShortDTO]
@@ -50,28 +50,26 @@ class TendersPresenter(BasePresenter):
 
     @BasePresenter.chain_operation
     def close_tender(
-        self,
-        tender_id: uint
-    ):        
+        self      
+    ):
         self._start_background_task(
             CloseTenderOperation(
                 self.app_state.service,
                 self.app_state.user,
-                tender_id
+                self.app_state.tender_id
             ),
             self.close_tender_finished
         )
 
     @BasePresenter.chain_operation
     def revert_tender(
-        self, 
-        tender_id: uint
+        self
     ):
         self._start_background_task(
             RevertTenderOperation(
                 self.app_state.service,
                 self.app_state.user,
-                tender_id
+                self.app_state.tender_id
             ),
             self.revert_tender_finished
         )
@@ -115,6 +113,7 @@ class TendersPresenter(BasePresenter):
         self,
         tender: uint
     ):
+        print("get_tender_full")
         self._start_background_task(
             LoadFullTenderOperation(
                 self.app_state.service,

@@ -100,16 +100,20 @@ class TendersService():
         count: uint
     ) -> list[TenderGetShortDTO]:
         print('get_tenders_short')   
-        tenders_data = service.view(GET_TENDERS, [page, count])
+        page -= 1 
+        tenders_data = service.view(GET_TENDERS, [page * count, count])
         
         result = []
+        i = page * count + 1
         for tender in tenders_data:
             result.append(TenderGetShortDTO(
+                tender_id=i,
                 creator=tender[0],
                 title=tender[1],
                 budget=tender[3],
                 deadline=tender[4],
             ))
+            i += 1
         print(result)
         return result
 

@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import pyqtSignal, QDate
+from PyQt6.QtCore import *
 from ui.presenters.tenders_presenter import *
 from models.common import addr, pkey
 from models.users_dto import *
 from pydantic import ValidationError
+from ui.views.tenders_page import TenderPage
 
 class TenderCreatingDialog(QDialog):
     def __init__(self, parent=None):
@@ -54,6 +55,7 @@ class TenderCreatingDialog(QDialog):
         
 
     def get_data(self):
+        print("Data got successfuly")
         return TenderCreateDTO(
             title=self.title_in.text(),
             description=self.description_in.toPlainText(),
@@ -92,7 +94,7 @@ class MainPage(QWidget):
         self.load_tenders_btn = QPushButton("Загрузить")
         tenders_btns_l.addWidget(self.load_tenders_btn)
         self.tenders_page_in = QSpinBox()
-        self.tenders_page_in.setRange(0,1_000_000_000)
+        self.tenders_page_in.setRange(1,1_000_000_000)
         self.tenders_page_in.setPrefix("Страница №")
         tenders_btns_l.addWidget(self.tenders_page_in)
         self.tenders_cnt_in = QSpinBox()
@@ -103,11 +105,12 @@ class MainPage(QWidget):
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setRowCount(10)
+        
         self.table.setHorizontalHeaderLabels(["Заказчик", "Название", "Бюджет", "Дедлайн", "Статус"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSortingEnabled(True)
+        self.table.doubleClicked.connect(self._go_to_tender)
 
         tenders_list_l.addWidget(self.table)
         create_tender_btn = QPushButton("Создать")
@@ -116,10 +119,7 @@ class MainPage(QWidget):
         tenders_status_lbl = QLabel("А тут доп инфа")
         tenders_list_l.addWidget(tenders_status_lbl)
 
-        self.table.setItem(0, 0, QTableWidgetItem("ABOBA"))
-        self.table.setItem(2, 2, QTableWidgetItem("BEBA"))
-
-        self.page1 = QLabel("Это страница 1")
+        self.page1 = TenderPage(self.presenter, 1, self)
         self.stacked.addWidget(self.page1)
         self.page2 = QLabel("Это страница 2")    
         self.stacked.addWidget(self.page2)
@@ -134,6 +134,10 @@ class MainPage(QWidget):
         self.presenter.error_occured.connect(self._on_error)
         self.load_tenders_btn.clicked.connect(self._load_tender)
         self.presenter.get_tenders_finished.connect(self._load_tender_finished)
+
+    def _go_to_tender(self, item: QModelIndex):        
+        self.presenter.app_state.set_tender_id(int(self.table.item(item.row(), 0).text()))
+        self.stacked.setCurrentIndex(1)
 
     def _open_creation_dialog(self):
         dialog = TenderCreatingDialog(self)

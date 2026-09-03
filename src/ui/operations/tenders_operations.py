@@ -75,7 +75,7 @@ class LoadTendersOperation(BlockchainOperation):
         self.page = page
         self.count = count
 
-    def execute(self) -> list[TenderGetShortDTO]:
+    def execute(self) -> TxReceipt:
         print('LoadTendersOperation execute')   
         return TendersService.get_tenders_short(
             self.service,
@@ -93,7 +93,7 @@ class LoadUserTendersOperation(BlockchainOperation):
         super().__init__(service, user)
         self.other_address = address
 
-    def execute(self) -> list[TenderGetShortDTO]:
+    def execute(self) -> TxReceipt:
         return TendersService.get_user_tenders(
             self.service,
             self.other_address            
@@ -106,10 +106,12 @@ class LoadFullTenderOperation(BlockchainOperation):
         user: BlockchainUser,
         tender: uint
     ):        
+        print("LoadFullTenderOperation")
         super().__init__(service, user)
         self.tender = tender
 
-    def execute(self) -> list[TenderGetShortDTO]:
+    def execute(self) -> TxReceipt:
+        print("execute")
         return TendersService.get_tender_full(
             self.service,
             self.tender            

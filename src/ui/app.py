@@ -15,7 +15,7 @@ class MainApp(QMainWindow):
         tenders_presenter = TendersPresenter(self.app_state)
 
         ### Настраиваем главное окно
-        self.setWindowTitle("First App")
+        self.setWindowTitle("GTS App")
         self.setGeometry(200,100,600,800)
         ### Настраиваем главное окно
 

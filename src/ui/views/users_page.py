@@ -202,13 +202,13 @@ class UserPage(QWidget):
         print(self.presenter.app_state.service.web3.provider.make_request('evm_snapshot', [])['result'])
 
     def _GOTO_BACKUP(self):
-        self.presenter.app_state.service.web3.provider.make_request('evm_revert', [1])
+        self.presenter.app_state.service.web3.provider.make_request('evm_revert', [3])
         print('backuped to 0x1')
 
 
     def _save_key(self):
         try:
-            self.presenter.app_state.setUser(self.key_in.text())
+            self.presenter.app_state.set_user(self.key_in.text())
         except Exception as e:
             self._on_error(str(e))
 

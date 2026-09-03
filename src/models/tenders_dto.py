@@ -48,6 +48,7 @@ class TenderGetFullDTO(BaseModel):
             raise ValueError("Cannot convert from UNIX timestamp to Date-Time")
 
 class TenderGetShortDTO(BaseModel):
+    tender_id: uint
     creator: addr
     title: string
     budget: uint

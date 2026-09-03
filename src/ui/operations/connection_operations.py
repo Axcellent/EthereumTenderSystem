@@ -13,4 +13,4 @@ class ConnectOperation(Operation):
         self.app_state = app_state
 
     def execute(self):        
-        self.app_state.setService(self.url, self.contract)
+        self.app_state.set_service(self.url, self.contract)
