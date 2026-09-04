@@ -56,8 +56,7 @@ class TenderCreatingDialog(QDialog):
         layout.addWidget(self.buttons)
         
 
-    def get_data(self):
-        print("Data got successfuly")
+    def get_data(self):        
         return TenderCreateDTO(
             title=self.title_in.text(),
             description=self.description_in.toPlainText(),
@@ -94,6 +93,7 @@ class TendersPage(QWidget):
         self._create_table(tenders_list_l)
         self._create_bottom_menu(tenders_list_l)
 
+        # signals
         self.presenter.error_occured.connect(self._on_error)    
         self.presenter.get_tenders_finished.connect(self._load_tenders_finished)
 
@@ -140,7 +140,7 @@ class TendersPage(QWidget):
         self.table.setSortingEnabled(True)
 
         # table header: setup
-        self.table.setColumnCount(5)
+        self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels(["ID", "Заказчик", "Название", "Бюджет", "Дедлайн", "Статус"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 

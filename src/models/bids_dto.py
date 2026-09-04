@@ -7,6 +7,7 @@ import datetime
 
 
 class BidGetDTO(BaseModel):
+    bid_id: uid
     tender_id: uid
     bidder: addr
     price: uid

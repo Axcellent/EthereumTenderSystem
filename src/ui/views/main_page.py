@@ -44,7 +44,8 @@ class MainPage(QWidget):
         self.contract_page = BidsPage(bids_presenter, self)
         self.stacked.addWidget(self.contract_page)
 
-        self.app_state.tender_changed.connect(self.stacked.setCurrentIndex)
+        # signals
+        self.app_state.tender_changed.connect(lambda: self.stacked.setCurrentIndex(1))
 
     def _create_menu(self, layout: QLayout):
         # <

@@ -51,6 +51,7 @@ class BidsService:
         )
 
         return BidGetDTO(
+            bid_id=bid_id,
             tender_id=data[0],
             bidder=data[1],
             price=data[2],
@@ -64,7 +65,7 @@ class BidsService:
         tender_id: uid
     ) -> list[BidGetDTO]:
 
-        bids = service.view(GET_TENDER_BIDS, tender_id)
+        bids = service.view(GET_TENDER_BIDS, [tender_id])
 
         data = []
         for bid_id in bids:
@@ -80,7 +81,7 @@ class BidsService:
         service: BlockchainService,
         user: addr
     ) -> list[BidGetDTO]:
-        bids = service.view(GET_USER_BIDS, user)
+        bids = service.view(GET_USER_BIDS, [user])
 
         data = []
         for bid_id in bids:

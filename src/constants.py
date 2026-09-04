@@ -21,10 +21,10 @@ GET_CONTRACT = 'contracts'
 # BIDS
 # tx
 SUBMIT_BID = 'submitBid'
-REVERT_BID = 'revertBid'
+REVERT_BID = 'withdrawBid'
 # view
 GET_BID = 'bids'
-GET_TENDER_BIDS = 'tenderBids'
+GET_TENDER_BIDS = 'getTenderBids'
 GET_USER_BIDS = 'usersBids'
 
 # REPORTS
