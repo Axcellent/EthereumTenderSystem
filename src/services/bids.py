@@ -1,7 +1,7 @@
 from services import TxReceipt, BlockchainService
 
 from models.common import (addr,
-                           uint,
+                           uid,
                            pkey)
 from models.bids_dto import BidGetDTO, BidCreateDTO
 
@@ -31,7 +31,7 @@ class BidsService:
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        bid_id: uint
+        bid_id: uid
     ) -> TxReceipt:
         return service.send_tx(
             address_from,
@@ -43,7 +43,7 @@ class BidsService:
     @staticmethod
     def get_bid(
         service: BlockchainService,
-        bid_id: uint
+        bid_id: uid
     ) -> BidGetDTO:
         data = service.view(
             function_name=GET_BID,
@@ -61,7 +61,7 @@ class BidsService:
     @staticmethod
     def get_tender_bids(
         service: BlockchainService,
-        tender_id: uint
+        tender_id: uid
     ) -> list[BidGetDTO]:
 
         bids = service.view(GET_TENDER_BIDS, tender_id)

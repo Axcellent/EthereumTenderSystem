@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field
 
-from models.common import (uint,
+from models.common import (uid,
                            text,
                            addr,
                            DocStatus)
 
 class ReviewGetDTO(BaseModel):
-    contractId: uint
+    contractId: uid
     review_from: addr
     review_to: addr
     rating: int = Field(le=-5,ge=5)
@@ -14,7 +14,7 @@ class ReviewGetDTO(BaseModel):
     status: DocStatus
 
 class ReviewCreateDTO(BaseModel):
-    tender_id: uint    
+    tender_id: uid    
     contractor: bool
     rating: int = Field(le=-5,ge=5)
     comment: text

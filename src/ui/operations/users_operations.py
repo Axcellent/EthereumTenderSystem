@@ -2,7 +2,7 @@ from ui.operations import (BlockchainOperation,
                                 BlockchainUser,
                                 BlockchainService)
 
-from models.common import (uint,
+from models.common import (uid,
                            addr,
                            pkey)
 

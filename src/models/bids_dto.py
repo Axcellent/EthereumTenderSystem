@@ -1,15 +1,15 @@
 from pydantic import BaseModel, field_validator, ValidationError
 
-from models.common import (uint,
+from models.common import (uid,
                            unix_time,
                            addr)
 import datetime
 
 
 class BidGetDTO(BaseModel):
-    tender_id: uint
+    tender_id: uid
     bidder: addr
-    price: uint
+    price: uid
     deadline: datetime.datetime
     is_active: bool
 
@@ -22,8 +22,8 @@ class BidGetDTO(BaseModel):
             raise ValueError("Cannot convert from UNIX timestamp to Date-Time")
 
 class BidCreateDTO(BaseModel):
-    tender_id: uint    
-    price: uint
+    tender_id: uid    
+    price: uid
     deadline: unix_time
 
     @field_validator("deadline", mode="before")

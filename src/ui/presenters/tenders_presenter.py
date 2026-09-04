@@ -1,7 +1,7 @@
 from PyQt6.QtCore import (QObject,
-                          pyqtSignal,
-                          pyqtSlot,
-                          QThread)
+                        pyqtSignal,
+                        pyqtSlot,
+                        QThread)
 from PyQt6.QtWidgets import QMessageBox
 from typing import Optional
 
@@ -13,7 +13,7 @@ from ui.presenters import BasePresenter
 
 from models.tenders_dto import *
 
-from models.common import addr, uint
+from models.common import addr, uid
 
 from models.tenders_dto import *
 
@@ -78,7 +78,7 @@ class TendersPresenter(BasePresenter):
     def get_tenders(
         self,
         page: int,
-        count: uint = 10
+        count: uid = 10
     ):
         print('get_tenders')
         self._start_background_task(
@@ -111,7 +111,7 @@ class TendersPresenter(BasePresenter):
     @BasePresenter.chain_operation
     def get_tender_full(
         self,
-        tender: uint
+        tender: uid
     ):
         print("get_tender_full")
         self._start_background_task(

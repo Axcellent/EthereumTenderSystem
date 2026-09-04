@@ -11,7 +11,7 @@ from typing import Any
 import json
 import requests
 
-from models.common import addr, pkey, uint
+from models.common import addr, pkey, uid
 
 class BlockchainService:
     def __init__(
@@ -47,10 +47,10 @@ class BlockchainService:
         key: pkey,
         function_name: str,
         args: list,
-        value: uint = 0,
+        value: uid = 0,
         unsafe: bool = False,
-        gas: uint = 600000,
-        gas_price_gwei: uint = 1
+        gas: uid = 600000,
+        gas_price_gwei: uid = 1
     ) -> TxReceipt:
         address_from: ChecksumAddress = self.web3.to_checksum_address(address_from)
         func: ContractFunction = getattr(self.contract.functions, function_name)

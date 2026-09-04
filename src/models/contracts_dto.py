@@ -1,28 +1,28 @@
 from pydantic import BaseModel, field_validator, ValidationError
 
-from models.common import (uint,
+from models.common import (uid,
                            unix_time,
                            addr,
                            ContractStatus)
 import datetime
 
 class AcceptingModeDTO(BaseModel):
-    tender_id: uint
+    tender_id: uid
     acceptance: bool
     strict: bool
 
 class ContractGetShortDTO(BaseModel):
-    contract_id: uint
+    contract_id: uid
     status: ContractStatus
 
 class ContractGetFullDTO(BaseModel):
-    contract_id: uint
-    tender_id: uint
+    contract_id: uid
+    tender_id: uid
 
     contractor: addr
     owner: addr
 
-    amount: uint
+    amount: uid
 
     started: datetime.datetime
     deadline: datetime.datetime

@@ -1,6 +1,6 @@
 from services import TxReceipt, BlockchainService
 
-from models.common import (uint,
+from models.common import (uid,
                            addr,
                            pkey)
 from models.contracts_dto import ContractGetFullDTO, ContractGetShortDTO, AcceptingModeDTO
@@ -18,7 +18,7 @@ class ContractsService():
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        tender_id: uint
+        tender_id: uid
     ) -> TxReceipt:      
         return service.send_tx(
             address_from,
@@ -32,8 +32,8 @@ class ContractsService():
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        tender_id: uint,
-        amount: uint
+        tender_id: uid,
+        amount: uid
     ) -> TxReceipt:      
         return service.send_tx(
             address_from,
@@ -48,7 +48,7 @@ class ContractsService():
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        tender_id: uint
+        tender_id: uid
     ) -> TxReceipt:
         return service.send_tx(
             address_from,
@@ -73,7 +73,7 @@ class ContractsService():
 
     def get_contract_full(
         service: BlockchainService,
-        contract_id: uint
+        contract_id: uid
     ) -> ContractGetFullDTO:
         data = service.view(
             function_name=GET_CONTRACT,
@@ -95,7 +95,7 @@ class ContractsService():
 
     def get_contract_short(
         service: BlockchainService,
-        contract_id: uint
+        contract_id: uid
     ) -> ContractGetShortDTO:
         data = service.view(
             function_name=GET_CONTRACT,
@@ -109,7 +109,7 @@ class ContractsService():
 
     def get_tender_contract(
         service: BlockchainService,
-        tender_id: uint
+        tender_id: uid
     ) -> ContractGetFullDTO:
         contract_id = service.view(
             function_name=GET_TENDER_CONTRACT,

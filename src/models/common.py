@@ -5,7 +5,7 @@ from typing import Annotated
 pkey = Annotated[str, Field(pattern=r'^0x[a-fA-F0-9]{64}$')]
 addr = Annotated[str, Field(pattern=r'^0x[a-fA-F0-9]{40}$')]
 
-uint = Annotated[int, Field(gt=0)]
+uid = Annotated[int, Field(gt=0)]
 unix_time = Annotated[int, Field(gt=0)]
 string = Annotated[str, Field(min_length=3,max_length=128)]
 text = Annotated[str, Field(min_length=0,max_length=4096)]

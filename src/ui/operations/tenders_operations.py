@@ -2,7 +2,7 @@ from ui.operations import (BlockchainOperation,
                                 BlockchainUser,
                                 BlockchainService)
 
-from models.common import (uint,
+from models.common import (uid,
                            addr,
                            pkey)
 
@@ -31,7 +31,7 @@ class CloseTenderOperation(BlockchainOperation):
         self,
         service: BlockchainService,
         user: BlockchainUser,
-        tender_id: uint
+        tender_id: uid
     ):
         super().__init__(service, user)
         self.tender_id = tender_id
@@ -49,7 +49,7 @@ class RevertTenderOperation(BlockchainOperation):
         self,
         service: BlockchainService,
         user: BlockchainUser,
-        tender_id: uint
+        tender_id: uid
     ):
         super().__init__(service, user)
         self.tender_id = tender_id
@@ -67,8 +67,8 @@ class LoadTendersOperation(BlockchainOperation):
         self,
         service: BlockchainService,
         user: BlockchainUser,
-        page: uint,
-        count: uint
+        page: uid,
+        count: uid
     ):     
         print('LoadTendersOperation __init__')   
         super().__init__(service, user)
@@ -104,7 +104,7 @@ class LoadFullTenderOperation(BlockchainOperation):
         self,
         service: BlockchainService,
         user: BlockchainUser,
-        tender: uint
+        tender: uid
     ):        
         print("LoadFullTenderOperation")
         super().__init__(service, user)

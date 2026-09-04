@@ -1,20 +1,193 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import pyqtSignal
-from ui.presenters.tenders_presenter import *
-from models.common import addr, pkey
-from models.users_dto import *
+from PyQt6.QtCore import *
+
 from pydantic import ValidationError
 
-class TenderPage(QWidget):
+from models.common import addr, pkey
+from models.tenders_dto import *
+
+from ui.presenters.tenders_presenter import *
+
+class TenderCreatingDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Создание тендера")
+        self.setParent(parent)
+
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+
+        self.title_in = QLineEdit()
+        self.title_in.setPlaceholderText("Название тендера")
+        form.addRow("Название", self.title_in)
+
+        self.description_in = QTextEdit()
+        self.description_in.setPlaceholderText("Полное описание тендера со ссылками на необходимые материалы")
+        form.addRow("Описание", self.description_in)
+
+        self.budget_in = QSpinBox()
+        self.budget_in.setRange(0, 2_000_000_000)
+        self.budget_in.setSingleStep(1)
+        self.budget_in.setSuffix(" wei")
+        self.budget_in.setToolTip("Бюджет на ваш заказ в wei")
+        form.addRow("Бюджет", self.budget_in)
+
+        self.deadline_in = QDateEdit()
+        self.deadline_in.setCalendarPopup(True)
+        self.deadline_in.setDisplayFormat("dd.MM.yyyy")
+        self.deadline_in.setDate(QDate.currentDate().addDays(14))
+        form.addRow("Дедлайн выполнения тендера", self.deadline_in)
+
+        self.bidding_deadline_in = QDateEdit()
+        self.bidding_deadline_in.setCalendarPopup(True)
+        self.bidding_deadline_in.setDisplayFormat("dd.MM.yyyy")
+        self.bidding_deadline_in.setDate(QDate.currentDate().addDays(1))
+        form.addRow("Дедлайн подачи заявок на тендер", self.bidding_deadline_in)
+
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok |
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+
+        layout.addLayout(form)
+        layout.addWidget(self.buttons)
+        
+
+    def get_data(self):
+        print("Data got successfuly")
+        return TenderCreateDTO(
+            title=self.title_in.text(),
+            description=self.description_in.toPlainText(),
+            budget=self.budget_in.value(),
+            deadline=datetime.datetime.combine(self.deadline_in.date().toPyDate(), datetime.time.min),
+            bidding_deadline=datetime.datetime.combine(self.bidding_deadline_in.date().toPyDate(), datetime.time.min),
+            parent_id=0
+        )
+
+class TendersPage(QWidget):
     def __init__(
         self,
         presenter: TendersPresenter,
-        tender_id: uint,
-        parent=None
+        parent
     ):
         super().__init__(parent)
         self.presenter = presenter
-        self.tender_id = tender_id
+
+        layout = QVBoxLayout(self)
+
+        tenders_gb = QGroupBox("Тендеры")
+        layout.addWidget(tenders_gb)
+
+        tenders_l = QVBoxLayout(tenders_gb)
+
+        # tender menu
+        tenders_btns_l = QHBoxLayout()
+        tenders_l.addLayout(tenders_btns_l)
+        self._create_pagination_menu(tenders_btns_l)
+
+        # tender list
+        tenders_list_l = QVBoxLayout()
+        tenders_l.addLayout(tenders_list_l)
+        self._create_table(tenders_list_l)
+        self._create_bottom_menu(tenders_list_l)
+
+        self.presenter.error_occured.connect(self._on_error)    
+        self.presenter.get_tenders_finished.connect(self._load_tenders_finished)
+
+    def _create_bottom_menu(self, layout: QLayout):
+        # create btn: create
+        create_tender_btn = QPushButton("Создать")    
+        layout.addWidget(create_tender_btn)    
+
+        # info label: create
+        tenders_status_lbl = QLabel("А тут доп инфа")
+        layout.addWidget(tenders_status_lbl)
+
+        # signals
+        create_tender_btn.clicked.connect(self._open_creation_dialog)
+
+    def _create_pagination_menu(self, layout: QLayout):
+        # load btn: create
+        self.load_tenders_btn = QPushButton("Загрузить")
+        layout.addWidget(self.load_tenders_btn)        
+
+        # page inpt: create
+        self.tenders_page_in = QSpinBox()
+        layout.addWidget(self.tenders_page_in)
+        # page inpt: setup
+        self.tenders_page_in.setRange(1,1_000_000_000)
+        self.tenders_page_in.setPrefix("Страница №")    
+
+        # count inpt: create
+        self.tenders_cnt_in = QSpinBox()
+        layout.addWidget(self.tenders_cnt_in)
+        # count inpt: setup
+        self.tenders_cnt_in.setRange(0,100)        
+        self.tenders_cnt_in.setSuffix(" штук")    
+
+        # signals
+        self.load_tenders_btn.clicked.connect(self._load_tenders)
+
+    def _create_table(self, layout: QLayout):
+        # table: create
+        self.table = QTableWidget()
+        layout.addWidget(self.table)
+        # table: setup
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setSortingEnabled(True)
+
+        # table header: setup
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["ID", "Заказчик", "Название", "Бюджет", "Дедлайн", "Статус"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        # signals
+        self.table.itemDoubleClicked.connect(self._go_to_tender)
+
+
+    def _go_to_tender(self, item: QModelIndex):        
+        self.presenter.app_state.set_tender_id(int(self.table.item(item.row(), 0).text()))        
+
+    def _open_creation_dialog(self):
+        dialog = TenderCreatingDialog(self)
+        res = dialog.exec()
+
+        if res == QDialog.DialogCode.Accepted:
+            try:
+                data = dialog.get_data()
+                self.presenter.create_tender(data)
+            except Exception as e:
+                self._on_error(str(e))
+
+    def _load_tenders(self):        
+        self.presenter.get_tenders(self.tenders_page_in.value(),self.tenders_cnt_in.value())  
+
+    def _load_tenders_finished(self, tender_data: list[TenderGetFullDTO]):
+        self.table.setRowCount(len(tender_data))
+
+        i,j=0,0    
+        for t in tender_data:
+            j = 0
+            for f, v in t.model_dump().items():                
+                self.table.setItem(i, j, QTableWidgetItem(str(v)))
+                j += 1
+            i += 1
+
+    def _on_error(self, msg: str):
+        QMessageBox.critical(self, "Ошибка", msg)
+    
+
+class TenderView(QWidget):
+    def __init__(
+        self,
+        presenter: TendersPresenter,
+        parent=None
+    ):
+        super().__init__(parent)
+        self.presenter = presenter        
 
         self.open_bid_menu_btn = QPushButton("Заявка")
         self.open_bid_menu_btn.clicked.connect(lambda: self.presenter.close_tender())
@@ -85,7 +258,7 @@ class TenderPage(QWidget):
 
         self.presenter.error_occured.connect(self._on_error)
 
-    def _change_id(self, new_id: uint):
+    def _change_id(self, new_id: uid):
         self.presenter.get_tender_full(new_id)
 
     def _show_tender(self, data: TenderGetFullDTO):

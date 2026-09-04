@@ -1,7 +1,7 @@
 from services import TxReceipt, BlockchainService
 
 from models.common import (addr,
-                           uint,
+                           uid,
                            pkey)
 from models.reports_dto import ReportCreateDTO, ReportGetDTO
 
@@ -30,7 +30,7 @@ class ReportsService():
         service: BlockchainService,
         address_from: addr,
         key: pkey,
-        report_id: uint,
+        report_id: uid,
         accept: bool,
     ) -> TxReceipt:      
         return service.send_tx(
@@ -43,7 +43,7 @@ class ReportsService():
     @staticmethod
     def get_report(
         service: BlockchainService,
-        report_id: uint,
+        report_id: uid,
     ) -> ReportGetDTO:
         data = service.view(GET_REPORT, [report_id])
 
@@ -57,7 +57,7 @@ class ReportsService():
     @staticmethod
     def get_contract_reports(
         service: BlockchainService,
-        contract_id: uint
+        contract_id: uid
     ) -> list[ReportGetDTO]:
         reports = service.view(GET_REPORTS, [contract_id])
 
